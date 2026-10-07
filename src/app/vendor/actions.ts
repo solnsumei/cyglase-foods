@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getStatesWithCities } from "@/lib/locations";
+import { getStatesWithCities, ensureCityExists } from "@/lib/locations";
+
 
 
 // 1. Email OTP Sign In & Kitchen Registration
@@ -185,8 +186,9 @@ export async function verifyVendorOtp(prevState: unknown, formData: FormData) {
           is_active: true,
         });
 
-      if (vendorInsertError) {
-        console.error("Auto vendor creation error:", vendorInsertError);
+      // Ensure custom area is saved to public.cities
+      if (bState && bArea) {
+        await ensureCityExists(bState, bArea);
       }
 
       redirect("/vendor");
@@ -247,6 +249,11 @@ export async function onboardVendor(prevState: unknown, formData: FormData) {
   });
 
   if (error) return { error: error.message };
+
+  // Ensure custom area is added to public.cities
+  if (state && city_area) {
+    await ensureCityExists(state, city_area);
+  }
 
   redirect("/vendor");
 }
@@ -429,6 +436,12 @@ export async function updateVendorSettings(formData: FormData) {
     .eq("id", vendor_id);
 
   if (error) return { error: error.message };
+
+  // Ensure custom area is added to public.cities
+  if (state && city_area) {
+    await ensureCityExists(state, city_area);
+  }
+
   revalidatePath("/vendor/settings");
   revalidatePath("/vendor");
   return { success: true };

@@ -145,8 +145,8 @@ function VendorLoginContent() {
                 setErrorMsg(null);
               }}
               className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${authMode === "register"
-                  ? "bg-base-100 text-primary shadow-sm font-black"
-                  : "text-base-content/60 hover:text-base-content"
+                ? "bg-base-100 text-primary shadow-sm font-black"
+                : "text-base-content/60 hover:text-base-content"
                 }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-warning" />
@@ -159,8 +159,8 @@ function VendorLoginContent() {
                 setErrorMsg(null);
               }}
               className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${authMode === "login"
-                  ? "bg-base-100 text-primary shadow-sm font-black"
-                  : "text-base-content/60 hover:text-base-content"
+                ? "bg-base-100 text-primary shadow-sm font-black"
+                : "text-base-content/60 hover:text-base-content"
                 }`}
             >
               <Store className="w-3.5 h-3.5" />
@@ -256,71 +256,68 @@ function VendorLoginContent() {
                     </div>
 
                     {/* State & City Area Grid from Database */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="form-control">
-                        <label className="label py-1">
-                          <span className="label-text font-bold text-xs text-base-content/80">
-                            State *
-                          </span>
-                        </label>
-                        <select
-                          name="state"
-                          value={state}
-                          onChange={(e) => {
-                            setState(e.target.value);
-                            setCityArea("");
-                          }}
-                          className="select select-bordered select-md w-full focus:select-primary text-sm rounded-xl font-medium"
-                        >
-                          {dbLocations.length > 0
-                            ? dbLocations.map((st) => (
-                              <option key={st.id} value={st.name}>
-                                {st.name}
-                              </option>
-                            ))
-                            : [
-                              "Lagos",
-                              "Abuja (FCT)",
-                              "Rivers",
-                              "Delta",
-                              "Edo",
-                              "Ogun",
-                              "Oyo",
-                              "Kano",
-                              "Enugu",
-                            ].map((st) => (
-                              <option key={st} value={st}>
-                                {st}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-
-                      <div className="form-control">
-                        <label className="label py-1">
-                          <span className="label-text font-bold text-xs text-base-content/80">
-                            Area / Neighborhood in {state} *
-                          </span>
-                        </label>
-                        <div className="relative">
-                          <MapPin className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
-                          <input
-                            type="text"
-                            name="city_area"
-                            required
-                            list="cities-datalist"
-                            value={cityArea}
-                            onChange={(e) => setCityArea(e.target.value)}
-                            placeholder={`e.g. ${dbLocations.find((l) => l.name === state)?.cities?.[0]?.name || "Ikeja, Yaba, Ipaja"
-                              }`}
-                            className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
-                          />
-                          <datalist id="cities-datalist">
-                            {(dbLocations.find((l) => l.name === state)?.cities || []).map((city: any) => (
-                              <option key={city.id} value={city.name} />
-                            ))}
-                          </datalist>
-                        </div>
+                    <div className="form-control">
+                      <label className="label py-1">
+                        <span className="label-text font-bold text-xs text-base-content/80">
+                          State *
+                        </span>
+                      </label>
+                      <select
+                        name="state"
+                        value={state}
+                        onChange={(e) => {
+                          setState(e.target.value);
+                          setCityArea("");
+                        }}
+                        className="select select-bordered select-md w-full focus:select-primary text-sm rounded-xl font-medium"
+                      >
+                        {dbLocations.length > 0
+                          ? dbLocations.map((st) => (
+                            <option key={st.id} value={st.name}>
+                              {st.name}
+                            </option>
+                          ))
+                          : [
+                            "Lagos",
+                            "Abuja (FCT)",
+                            "Rivers",
+                            "Delta",
+                            "Edo",
+                            "Ogun",
+                            "Oyo",
+                            "Kano",
+                            "Enugu",
+                          ].map((st) => (
+                            <option key={st} value={st}>
+                              {st}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="form-control">
+                      <label className="label py-1">
+                        <span className="label-text font-bold text-xs text-base-content/80">
+                          Area / Neighborhood in {state} *
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <MapPin className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
+                        <input
+                          type="text"
+                          name="city_area"
+                          required
+                          list="cities-datalist"
+                          value={cityArea}
+                          onChange={(e) => setCityArea(e.target.value)}
+                          placeholder={`e.g. ${dbLocations.find((l) => l.name === state)?.cities?.[0]?.name || "Ikeja, Yaba, Ipaja"
+                            }`}
+                          className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
+                        />
+                        <datalist id="cities-datalist">
+                          {(dbLocations.find((l) => l.name === state)?.cities || []).map((city: any) => (
+                            <option key={city.id} value={city.name} />
+                          ))}
+                        </datalist>
                       </div>
                     </div>
                   </>

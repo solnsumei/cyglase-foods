@@ -12,6 +12,7 @@ import {
   Menu,
   ShieldAlert,
   ExternalLink,
+  MapPin,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -161,6 +162,13 @@ export default async function AdminDashboardLayout({
                 <Link href="/admin/menu-items" className="flex items-center gap-3 py-2.5">
                   <UtensilsCrossed className="w-4 h-4 text-primary" />
                   Menu Items
+                </Link>
+              </li>
+
+              <li>
+                <Link href="/admin/locations" className="flex items-center gap-3 py-2.5">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  Locations & Areas
                 </Link>
               </li>
 

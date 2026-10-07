@@ -170,3 +170,107 @@ export async function updatePlatformSetting(key: string, value: string) {
   revalidatePath("/admin/settings");
   return { success: true };
 }
+
+// Location Actions (States & Cities)
+export async function upsertState(formData: FormData) {
+  const id = formData.get("id") as string | null;
+  const name = (formData.get("name") as string)?.trim();
+  const code = (formData.get("code") as string)?.trim().toUpperCase() || name?.slice(0, 3).toUpperCase();
+  const display_order = parseInt(formData.get("display_order") as string) || 50;
+  const is_active = formData.get("is_active") === "true" || formData.get("is_active") === "on";
+
+  if (!name) return { error: "State name is required." };
+
+  const adminClient = createAdminClient();
+
+  if (id) {
+    const { error } = await adminClient
+      .from("states")
+      .update({ name, code, display_order, is_active, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await adminClient
+      .from("states")
+      .insert({ name, code, display_order, is_active });
+    if (error) return { error: error.message };
+  }
+
+  revalidatePath("/admin/locations");
+  revalidatePath("/vendor/settings");
+  return { success: true };
+}
+
+export async function toggleStateActive(id: string, currentState: boolean) {
+  const adminClient = createAdminClient();
+  const { error } = await adminClient
+    .from("states")
+    .update({ is_active: !currentState, updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin/locations");
+  revalidatePath("/vendor/settings");
+  return { success: true };
+}
+
+export async function deleteState(id: string) {
+  const adminClient = createAdminClient();
+  const { error } = await adminClient.from("states").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/locations");
+  revalidatePath("/vendor/settings");
+  return { success: true };
+}
+
+export async function upsertCity(formData: FormData) {
+  const id = formData.get("id") as string | null;
+  const state_id = formData.get("state_id") as string;
+  const name = (formData.get("name") as string)?.trim();
+  const display_order = parseInt(formData.get("display_order") as string) || 50;
+  const is_active = formData.get("is_active") === "true" || formData.get("is_active") === "on";
+
+  if (!name || !state_id) return { error: "City name and State are required." };
+
+  const adminClient = createAdminClient();
+
+  if (id) {
+    const { error } = await adminClient
+      .from("cities")
+      .update({ state_id, name, display_order, is_active, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await adminClient
+      .from("cities")
+      .insert({ state_id, name, display_order, is_active });
+    if (error) return { error: error.message };
+  }
+
+  revalidatePath("/admin/locations");
+  revalidatePath("/vendor/settings");
+  return { success: true };
+}
+
+export async function toggleCityActive(id: string, currentState: boolean) {
+  const adminClient = createAdminClient();
+  const { error } = await adminClient
+    .from("cities")
+    .update({ is_active: !currentState, updated_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin/locations");
+  revalidatePath("/vendor/settings");
+  return { success: true };
+}
+
+export async function deleteCity(id: string) {
+  const adminClient = createAdminClient();
+  const { error } = await adminClient.from("cities").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/locations");
+  revalidatePath("/vendor/settings");
+  return { success: true };
+}
+
