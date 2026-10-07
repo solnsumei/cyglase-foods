@@ -243,7 +243,7 @@ export default function HomeClient({
       </header>
 
       {/* Main Container */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-4 space-y-6">
+      <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 pt-5 space-y-6">
         {/* Search Bar with Anchor */}
         <div id="search" className="relative flex items-center gap-2">
           <div className="relative flex-1">
@@ -401,7 +401,7 @@ export default function HomeClient({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredVendors.map((vendor) => (
                 <div
                   key={vendor.id}
@@ -481,7 +481,7 @@ export default function HomeClient({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDishes.map((item) => (
                 <div
                   key={item.id}

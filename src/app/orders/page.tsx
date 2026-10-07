@@ -69,7 +69,17 @@ export default async function CustomerOrdersPage() {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-xl mx-auto p-4 sm:p-6 space-y-4">
+      <main className="max-w-4xl mx-auto w-full p-4 sm:p-6 space-y-4">
+        <div className="hidden md:block mb-2">
+          <h1 className="text-2xl font-black text-base-content flex items-center gap-2">
+            <ShoppingBag className="w-6 h-6 text-primary" />
+            My Food Orders
+          </h1>
+          <p className="text-xs text-base-content/65 mt-0.5">
+            Track active food preparation, delivery status, and your past orders.
+          </p>
+        </div>
+
         {!user ? (
           <div className="card bg-base-100 shadow-sm border border-base-200 rounded-3xl p-8 text-center space-y-3">
             <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
