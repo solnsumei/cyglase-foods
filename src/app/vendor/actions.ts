@@ -5,11 +5,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-// 1. Email OTP Sign In
+// 1. Email OTP Sign In & Kitchen Registration
 export async function sendVendorOtp(prevState: unknown, formData: FormData) {
   const email = (formData.get("email") as string)?.trim().toLowerCase();
   const mode = (formData.get("mode") as string) || "login";
-  if (!email) return { error: "Please enter your email address." };
+  const business_name = (formData.get("business_name") as string)?.trim();
+  const phone = (formData.get("phone") as string)?.trim();
+  const state = (formData.get("state") as string)?.trim() || "Lagos";
+  const city_area = (formData.get("city_area") as string)?.trim();
+
+  if (!email) return { error: "Please enter your business email address." };
 
   const adminClient = createAdminClient();
 
@@ -43,6 +48,16 @@ export async function sendVendorOtp(prevState: unknown, formData: FormData) {
       }
     }
   } else if (mode === "register") {
+    if (!business_name) {
+      return { error: "Please enter your kitchen or restaurant business name." };
+    }
+    if (!phone) {
+      return { error: "Please enter your business phone number." };
+    }
+    if (!city_area) {
+      return { error: "Please enter your city area or neighborhood (e.g. Yaba, Ikeja, Ipaja)." };
+    }
+
     // If registering, check if they already have an existing vendor
     if (profile) {
       const { data: vendor } = await adminClient
@@ -64,6 +79,14 @@ export async function sendVendorOtp(prevState: unknown, formData: FormData) {
     email,
     options: {
       shouldCreateUser: mode === "register",
+      data: {
+        business_name: business_name || undefined,
+        full_name: business_name || undefined,
+        phone: phone || undefined,
+        state: state || undefined,
+        city_area: city_area || undefined,
+        role: "vendor",
+      },
     },
   });
 
@@ -87,6 +110,10 @@ export async function sendVendorOtp(prevState: unknown, formData: FormData) {
 export async function verifyVendorOtp(prevState: unknown, formData: FormData) {
   const email = (formData.get("email") as string)?.trim().toLowerCase();
   const token = (formData.get("token") as string)?.trim();
+  const business_name = (formData.get("business_name") as string)?.trim();
+  const phone = (formData.get("phone") as string)?.trim();
+  const state = (formData.get("state") as string)?.trim() || "Lagos";
+  const city_area = (formData.get("city_area") as string)?.trim();
 
   if (!email || !token) return { error: "Please enter the 6-digit OTP code." };
 
@@ -105,15 +132,65 @@ export async function verifyVendorOtp(prevState: unknown, formData: FormData) {
     return { error: error?.message || "Invalid or expired OTP code." };
   }
 
+  const adminClient = createAdminClient();
+
   // Check if vendor record exists
-  const { data: vendor } = await supabase
+  const { data: existingVendor } = await adminClient
     .from("vendors")
     .select("id")
     .eq("user_id", data.user.id)
     .maybeSingle();
 
-  if (!vendor) {
-    redirect("/vendor/onboarding");
+  if (!existingVendor) {
+    // Extract metadata captured during registration
+    const bName =
+      business_name ||
+      (data.user.user_metadata?.business_name as string) ||
+      (data.user.user_metadata?.full_name as string);
+    const bPhone =
+      phone || (data.user.user_metadata?.phone as string);
+    const bState =
+      state || (data.user.user_metadata?.state as string) || "Lagos";
+    const bArea =
+      city_area || (data.user.user_metadata?.city_area as string);
+
+    if (bName && bPhone && bArea) {
+      // Create slug from business name
+      const slug =
+        bName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") +
+        "-" +
+        Math.floor(1000 + Math.random() * 9000);
+
+      // Update profile
+      await adminClient
+        .from("profiles")
+        .update({ role: "vendor", full_name: bName, phone: bPhone })
+        .eq("id", data.user.id);
+
+      // Auto-provision kitchen vendor row
+      const { error: vendorInsertError } = await adminClient
+        .from("vendors")
+        .insert({
+          user_id: data.user.id,
+          business_name: bName,
+          slug,
+          phone: bPhone,
+          state: bState,
+          city: bState === "Lagos" ? "Lagos" : bState,
+          city_area: bArea,
+          address: `${bArea}, ${bState}`,
+          is_open: true,
+          is_active: true,
+        });
+
+      if (vendorInsertError) {
+        console.error("Auto vendor creation error:", vendorInsertError);
+      }
+
+      redirect("/vendor");
+    } else {
+      redirect("/vendor/onboarding");
+    }
   }
 
   redirect("/vendor");

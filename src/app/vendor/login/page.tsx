@@ -14,6 +14,8 @@ import {
   Sparkles,
   CheckCircle,
   ChefHat,
+  Phone,
+  MapPin,
 } from "lucide-react";
 
 function VendorLoginContent() {
@@ -25,6 +27,10 @@ function VendorLoginContent() {
   const [authMode, setAuthMode] = useState<"login" | "register">(initialMode);
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [state, setState] = useState("Lagos");
+  const [cityArea, setCityArea] = useState("");
   const [otp, setOtp] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +51,12 @@ function VendorLoginContent() {
 
     const formData = new FormData(e.currentTarget);
     formData.append("mode", authMode);
+    if (authMode === "register") {
+      formData.append("business_name", businessName);
+      formData.append("phone", phone);
+      formData.append("state", state);
+      formData.append("city_area", cityArea);
+    }
     const res = await sendVendorOtp(null, formData);
     setIsLoading(false);
 
@@ -70,6 +82,13 @@ function VendorLoginContent() {
     const formData = new FormData(e.currentTarget);
     formData.append("email", email);
     formData.set("token", otp);
+    formData.append("mode", authMode);
+    if (authMode === "register") {
+      formData.append("business_name", businessName);
+      formData.append("phone", phone);
+      formData.append("state", state);
+      formData.append("city_area", cityArea);
+    }
     const res = await verifyVendorOtp(null, formData);
     setIsLoading(false);
 
@@ -151,43 +170,173 @@ function VendorLoginContent() {
             {step === "email" ? (
               <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
                 {authMode === "register" ? (
-                  <div className="bg-primary/5 border border-primary/15 rounded-2xl p-3.5 mb-1">
-                    <h3 className="font-black text-xs text-primary flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Quick 2-Minute Onboarding
-                    </h3>
-                    <p className="text-[11px] text-base-content/70 mt-1 leading-relaxed">
-                      Enter your email to verify and set up your kitchen storefront, dishes, and bank payout details.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-left mb-1">
-                    <h3 className="font-black text-sm text-base-content">
-                      Welcome Back, Chef!
-                    </h3>
-                    <p className="text-[11px] text-base-content/60">
-                      Sign in to manage your kitchen orders and live menu stock.
-                    </p>
-                  </div>
-                )}
+                  <>
+                    <div className="bg-primary/5 border border-primary/15 rounded-2xl p-3.5 mb-1">
+                      <h3 className="font-black text-xs text-primary flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        Kitchen Vendor Registration
+                      </h3>
+                      <p className="text-[11px] text-base-content/70 mt-1 leading-relaxed">
+                        Enter your business name, contact info, and kitchen location to get listed.
+                      </p>
+                    </div>
 
-                <div className="form-control">
-                  <label className="label py-1">
-                    <span className="label-text font-bold text-xs text-base-content/80">
-                      {authMode === "register" ? "Business Email Address" : "Registered Vendor Email"}
-                    </span>
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
-                    <input
-                      type="email"
-                      name="email"
-                      required
-                      placeholder="e.g. chef@mamatolafoods.com"
-                      className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
-                    />
-                  </div>
-                </div>
+                    {/* Business Name */}
+                    <div className="form-control">
+                      <label className="label py-1">
+                        <span className="label-text font-bold text-xs text-base-content/80">
+                          Business / Kitchen Name *
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <Store className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
+                        <input
+                          type="text"
+                          name="business_name"
+                          required
+                          value={businessName}
+                          onChange={(e) => setBusinessName(e.target.value)}
+                          placeholder="e.g. Mama Put Kitchen & Grills"
+                          className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Business Email */}
+                    <div className="form-control">
+                      <label className="label py-1">
+                        <span className="label-text font-bold text-xs text-base-content/80">
+                          Business Email Address *
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
+                        <input
+                          type="email"
+                          name="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="e.g. chef@mamatolafoods.com"
+                          className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Phone Number */}
+                    <div className="form-control">
+                      <label className="label py-1">
+                        <span className="label-text font-bold text-xs text-base-content/80">
+                          Phone Number (for Order Alerts) *
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <Phone className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
+                        <input
+                          type="tel"
+                          name="phone"
+                          required
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="e.g. 08012345678"
+                          className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    {/* State & City Area Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="form-control">
+                        <label className="label py-1">
+                          <span className="label-text font-bold text-xs text-base-content/80">
+                            State *
+                          </span>
+                        </label>
+                        <select
+                          name="state"
+                          value={state}
+                          onChange={(e) => setState(e.target.value)}
+                          className="select select-bordered select-md w-full focus:select-primary text-sm rounded-xl font-medium"
+                        >
+                          {[
+                            "Lagos",
+                            "Abuja (FCT)",
+                            "Rivers",
+                            "Oyo",
+                            "Ogun",
+                            "Kano",
+                            "Enugu",
+                            "Delta",
+                            "Edo",
+                            "Kaduna",
+                            "Anambra",
+                            "Akwa Ibom",
+                            "Ondo",
+                            "Osun",
+                            "Kwara",
+                            "Plateau",
+                            "Cross River",
+                          ].map((st) => (
+                            <option key={st} value={st}>
+                              {st}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="form-control">
+                        <label className="label py-1">
+                          <span className="label-text font-bold text-xs text-base-content/80">
+                            Area / Neighborhood *
+                          </span>
+                        </label>
+                        <div className="relative">
+                          <MapPin className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
+                          <input
+                            type="text"
+                            name="city_area"
+                            required
+                            value={cityArea}
+                            onChange={(e) => setCityArea(e.target.value)}
+                            placeholder="e.g. Yaba, Ikeja, Ipaja"
+                            className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-left mb-1">
+                      <h3 className="font-black text-sm text-base-content">
+                        Welcome Back, Chef!
+                      </h3>
+                      <p className="text-[11px] text-base-content/60">
+                        Sign in to manage your kitchen orders and live menu stock.
+                      </p>
+                    </div>
+
+                    <div className="form-control">
+                      <label className="label py-1">
+                        <span className="label-text font-bold text-xs text-base-content/80">
+                          Registered Vendor Email
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
+                        <input
+                          type="email"
+                          name="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="e.g. chef@mamatolafoods.com"
+                          className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <button
                   type="submit"
