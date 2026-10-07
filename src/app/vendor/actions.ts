@@ -8,19 +8,71 @@ import { redirect } from "next/navigation";
 // 1. Email OTP Sign In
 export async function sendVendorOtp(prevState: unknown, formData: FormData) {
   const email = (formData.get("email") as string)?.trim().toLowerCase();
+  const mode = (formData.get("mode") as string) || "login";
   if (!email) return { error: "Please enter your email address." };
+
+  const adminClient = createAdminClient();
+
+  // 1. Check if user/vendor exists in our database
+  const { data: profile } = await adminClient
+    .from("profiles")
+    .select("id, role")
+    .ilike("email", email)
+    .maybeSingle();
+
+  if (mode === "login") {
+    // If not in profiles or not a vendor/admin
+    if (!profile) {
+      return {
+        error: "No vendor account found with this email. Please switch to the 'Register Kitchen' tab to create your account.",
+      };
+    }
+
+    // Check if they have an active kitchen registered
+    if (profile.role !== "admin") {
+      const { data: vendor } = await adminClient
+        .from("vendors")
+        .select("id")
+        .eq("user_id", profile.id)
+        .maybeSingle();
+
+      if (!vendor && profile.role !== "vendor") {
+        return {
+          error: "This email is registered as a customer, but no food kitchen was found. Please switch to 'Register Kitchen' to set up your food outlet.",
+        };
+      }
+    }
+  } else if (mode === "register") {
+    // If registering, check if they already have an existing vendor
+    if (profile) {
+      const { data: vendor } = await adminClient
+        .from("vendors")
+        .select("id")
+        .eq("user_id", profile.id)
+        .maybeSingle();
+
+      if (vendor) {
+        return {
+          error: "A kitchen is already registered under this email. Please switch to 'Vendor Log In' to access your dashboard.",
+        };
+      }
+    }
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      shouldCreateUser: true,
+      shouldCreateUser: mode === "register",
     },
   });
 
   if (error) {
     console.error("sendVendorOtp error:", error.message);
     const msg = error.message.toLowerCase();
+    if (msg.includes("signups not allowed") || msg.includes("user not found")) {
+      return { error: "No vendor account found with this email. Please switch to 'Register Kitchen' to create your account." };
+    }
     if (msg.includes("database error")) {
       return { error: "Unable to find or verify this vendor account. Please try again shortly." };
     }

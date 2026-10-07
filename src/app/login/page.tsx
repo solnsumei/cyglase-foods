@@ -47,6 +47,7 @@ function CustomerLoginContent() {
     setErrorMsg(null);
 
     const formData = new FormData(e.currentTarget);
+    formData.append("mode", authMode);
     formData.append("full_name", fullName);
     formData.append("phone", phone);
 

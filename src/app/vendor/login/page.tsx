@@ -44,6 +44,7 @@ function VendorLoginContent() {
     setErrorMsg(null);
 
     const formData = new FormData(e.currentTarget);
+    formData.append("mode", authMode);
     const res = await sendVendorOtp(null, formData);
     setIsLoading(false);
 

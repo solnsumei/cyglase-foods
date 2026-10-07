@@ -8,16 +8,40 @@ import { redirect } from "next/navigation";
 // 1. Customer OTP Authentication
 export async function sendCustomerOtp(prevState: unknown, formData: FormData) {
   const email = (formData.get("email") as string)?.trim().toLowerCase();
+  const mode = (formData.get("mode") as string) || "login";
   const fullName = (formData.get("full_name") as string)?.trim();
   const phone = (formData.get("phone") as string)?.trim();
 
   if (!email) return { error: "Please enter your email address." };
 
+  const adminClient = createAdminClient();
+
+  // 1. Check if profile exists
+  const { data: profile } = await adminClient
+    .from("profiles")
+    .select("id")
+    .ilike("email", email)
+    .maybeSingle();
+
+  if (mode === "login") {
+    if (!profile) {
+      return {
+        error: "No account found with this email address. Please switch to the 'Create Account' tab to register.",
+      };
+    }
+  } else if (mode === "register") {
+    if (profile) {
+      return {
+        error: "An account with this email address already exists. Please switch to 'Sign In' to log in.",
+      };
+    }
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      shouldCreateUser: true,
+      shouldCreateUser: mode === "register",
       data: {
         full_name: fullName || undefined,
         phone: phone || undefined,
@@ -28,6 +52,9 @@ export async function sendCustomerOtp(prevState: unknown, formData: FormData) {
   if (error) {
     console.error("sendCustomerOtp error:", error.message);
     const msg = error.message.toLowerCase();
+    if (msg.includes("signups not allowed") || msg.includes("user not found")) {
+      return { error: "No account found with this email address. Please switch to the 'Create Account' tab to register." };
+    }
     if (msg.includes("database error")) {
       return { error: "Unable to find or verify this account. Please try again shortly." };
     }
