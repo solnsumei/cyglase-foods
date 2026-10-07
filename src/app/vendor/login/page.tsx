@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { sendVendorOtp, verifyVendorOtp } from "../actions";
 import Link from "next/link";
 import OtpInput from "@/components/OtpInput";
@@ -15,13 +16,27 @@ import {
   ChefHat,
 } from "lucide-react";
 
-export default function VendorLoginPage() {
-  const [authMode, setAuthMode] = useState<"login" | "register">("register");
+function VendorLoginContent() {
+  const searchParams = useSearchParams();
+  const modeParam = searchParams.get("mode") || searchParams.get("tab");
+  const initialMode: "login" | "register" =
+    modeParam === "register" || modeParam === "signup" ? "register" : "login";
+
+  const [authMode, setAuthMode] = useState<"login" | "register">(initialMode);
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const mode = searchParams.get("mode") || searchParams.get("tab");
+    if (mode === "register" || mode === "signup") {
+      setAuthMode("register");
+    } else if (mode === "login" || mode === "signin") {
+      setAuthMode("login");
+    }
+  }, [searchParams]);
 
   const handleSendOtp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -283,5 +298,19 @@ export default function VendorLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VendorLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-base-200/50 flex items-center justify-center p-4">
+          <span className="loading loading-spinner loading-md text-primary"></span>
+        </div>
+      }
+    >
+      <VendorLoginContent />
+    </Suspense>
   );
 }

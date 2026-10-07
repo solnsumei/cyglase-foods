@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { sendCustomerOtp, verifyCustomerOtp } from "../customer/actions";
 import Link from "next/link";
 import OtpInput from "@/components/OtpInput";
@@ -16,8 +17,13 @@ import {
   Sparkles,
 } from "lucide-react";
 
-export default function CustomerLoginPage() {
-  const [authMode, setAuthMode] = useState<"register" | "login">("register");
+function CustomerLoginContent() {
+  const searchParams = useSearchParams();
+  const modeParam = searchParams.get("mode") || searchParams.get("tab");
+  const initialMode: "register" | "login" =
+    modeParam === "register" || modeParam === "signup" ? "register" : "login";
+
+  const [authMode, setAuthMode] = useState<"register" | "login">(initialMode);
   const [step, setStep] = useState<"details" | "otp">("details");
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
@@ -25,6 +31,15 @@ export default function CustomerLoginPage() {
   const [otp, setOtp] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const mode = searchParams.get("mode") || searchParams.get("tab");
+    if (mode === "register" || mode === "signup") {
+      setAuthMode("register");
+    } else if (mode === "login" || mode === "signin") {
+      setAuthMode("login");
+    }
+  }, [searchParams]);
 
   const handleSendOtp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -280,5 +295,19 @@ export default function CustomerLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CustomerLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-base-200/50 flex items-center justify-center p-4">
+          <span className="loading loading-spinner loading-md text-primary"></span>
+        </div>
+      }
+    >
+      <CustomerLoginContent />
+    </Suspense>
   );
 }
