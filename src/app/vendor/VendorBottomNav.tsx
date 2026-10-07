@@ -12,41 +12,59 @@ export default function VendorBottomNav({ storeSlug }: { storeSlug?: string }) {
   const isSettings = pathname.startsWith("/vendor/settings");
 
   return (
-    <nav className="btm-nav btm-nav-md border-t border-base-300 bg-base-100 z-40 shadow-lg sm:max-w-md sm:mx-auto sm:rounded-t-2xl">
-      <Link
-        href="/vendor"
-        className={`${isOrders ? "active text-primary font-bold" : "text-base-content/60"}`}
-      >
-        <ShoppingBag className="w-5 h-5" />
-        <span className="btm-nav-label text-[11px]">Orders</span>
-      </Link>
-
-      <Link
-        href="/vendor/menu"
-        className={`${isMenu ? "active text-primary font-bold" : "text-base-content/60"}`}
-      >
-        <UtensilsCrossed className="w-5 h-5" />
-        <span className="btm-nav-label text-[11px]">My Menu</span>
-      </Link>
-
-      {storeSlug && (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-base-100/95 backdrop-blur-md border-t border-base-200 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] md:hidden">
+      <div className={`grid ${storeSlug ? "grid-cols-4" : "grid-cols-3"} h-16 items-center px-1 max-w-md mx-auto`}>
+        {/* Orders */}
         <Link
-          href={`/store/${storeSlug}`}
-          target="_blank"
-          className="text-base-content/60 hover:text-primary"
+          href="/vendor"
+          className={`flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition-colors ${
+            isOrders
+              ? "text-primary font-black"
+              : "text-base-content/60 hover:text-base-content"
+          }`}
         >
-          <Store className="w-5 h-5" />
-          <span className="btm-nav-label text-[11px]">Storefront</span>
+          <ShoppingBag className={`w-5 h-5 ${isOrders ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
+          <span className="text-[10px] tracking-tight">Orders</span>
         </Link>
-      )}
 
-      <Link
-        href="/vendor/settings"
-        className={`${isSettings ? "active text-primary font-bold" : "text-base-content/60"}`}
-      >
-        <Sliders className="w-5 h-5" />
-        <span className="btm-nav-label text-[11px]">Settings</span>
-      </Link>
+        {/* Menu */}
+        <Link
+          href="/vendor/menu"
+          className={`flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition-colors ${
+            isMenu
+              ? "text-primary font-black"
+              : "text-base-content/60 hover:text-base-content"
+          }`}
+        >
+          <UtensilsCrossed className={`w-5 h-5 ${isMenu ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
+          <span className="text-[10px] tracking-tight">My Menu</span>
+        </Link>
+
+        {/* Public Storefront Link */}
+        {storeSlug && (
+          <Link
+            href={`/store/${storeSlug}`}
+            target="_blank"
+            className="flex flex-col items-center justify-center gap-1 py-1 text-base-content/60 hover:text-primary transition-colors"
+          >
+            <Store className="w-5 h-5 stroke-[1.8]" />
+            <span className="text-[10px] tracking-tight">Storefront</span>
+          </Link>
+        )}
+
+        {/* Settings */}
+        <Link
+          href="/vendor/settings"
+          className={`flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition-colors ${
+            isSettings
+              ? "text-primary font-black"
+              : "text-base-content/60 hover:text-base-content"
+          }`}
+        >
+          <Sliders className={`w-5 h-5 ${isSettings ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
+          <span className="text-[10px] tracking-tight">Settings</span>
+        </Link>
+      </div>
     </nav>
   );
 }

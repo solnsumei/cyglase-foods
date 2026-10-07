@@ -34,7 +34,7 @@ export default async function CustomerOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-base-200/40 pb-28">
+    <div className="min-h-screen bg-base-200/40 pb-24 md:pb-12">
       {/* Top Header */}
       <header className="sticky top-0 z-30 bg-base-100/90 backdrop-blur-md border-b border-base-200 px-4 py-3 sm:px-6">
         <div className="max-w-xl mx-auto flex items-center justify-between">
