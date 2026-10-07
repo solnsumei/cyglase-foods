@@ -76,6 +76,7 @@ export async function placeCustomerOrder({
   customerName,
   customerPhone,
   customerEmail,
+  fulfillmentType = "delivery",
   deliveryAddress,
   deliveryLandmark,
   deliveryNotes,
@@ -88,7 +89,8 @@ export async function placeCustomerOrder({
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
-  deliveryAddress: string;
+  fulfillmentType?: "delivery" | "pickup";
+  deliveryAddress?: string;
   deliveryLandmark?: string;
   deliveryNotes?: string;
   items: CartItem[];
@@ -99,8 +101,14 @@ export async function placeCustomerOrder({
   if (!items || items.length === 0) {
     return { error: "Your food cart is empty." };
   }
-  if (!customerName || !customerPhone || !deliveryAddress) {
-    return { error: "Please fill in your name, delivery phone number, and address." };
+  if (!customerName || !customerPhone) {
+    return { error: "Please enter your name and phone number." };
+  }
+  if (!customerEmail) {
+    return { error: "Please enter your email address to track your order." };
+  }
+  if (fulfillmentType === "delivery" && !deliveryAddress) {
+    return { error: "Please provide a delivery address." };
   }
 
   const supabase = await createClient();
@@ -110,20 +118,72 @@ export async function placeCustomerOrder({
 
   const adminClient = createAdminClient();
 
+  // Automatic account creation / linking if not logged in
+  let customerId = user?.id || null;
+  if (!customerId && customerEmail) {
+    const { data: existingProfile } = await adminClient
+      .from("profiles")
+      .select("id")
+      .eq("email", customerEmail)
+      .maybeSingle();
+
+    if (existingProfile) {
+      customerId = existingProfile.id;
+      // Update phone if missing
+      await adminClient
+        .from("profiles")
+        .update({ phone: customerPhone, full_name: customerName })
+        .eq("id", customerId);
+    } else {
+      const { data: newUser } = await adminClient.auth.admin.createUser({
+        email: customerEmail,
+        email_confirm: true,
+        user_metadata: {
+          full_name: customerName,
+          phone: customerPhone,
+        },
+      });
+      if (newUser?.user) {
+        customerId = newUser.user.id;
+      }
+    }
+  }
+
+  // Fetch vendor info to get pickup address if fulfillment is pickup
+  const { data: vendor } = await adminClient
+    .from("vendors")
+    .select("user_id, address, city_area, business_name")
+    .eq("id", vendorId)
+    .single();
+
+  const finalDeliveryAddress =
+    fulfillmentType === "pickup"
+      ? `[Self Pickup] ${vendor?.business_name || "Kitchen"} - ${vendor?.address || ""}, ${vendor?.city_area || ""}`
+      : deliveryAddress || "Lagos";
+
+  const finalDeliveryFee = fulfillmentType === "pickup" ? 0 : deliveryFee;
+  const finalTotalAmount = subtotal + finalDeliveryFee;
+
   // Create order in DB with initial status: pending_acceptance
   const { data: order, error: orderError } = await adminClient
     .from("orders")
     .insert({
-      customer_id: user?.id || null,
+      customer_id: customerId,
       vendor_id: vendorId,
       contact_phone: customerPhone,
-      delivery_address: deliveryAddress,
-      delivery_city_area: deliveryLandmark || "Lagos",
+      delivery_address: finalDeliveryAddress,
+      delivery_city_area:
+        fulfillmentType === "pickup"
+          ? vendor?.city_area || "Kitchen Pickup"
+          : deliveryLandmark || "Lagos",
       delivery_landmark: deliveryLandmark || null,
-      notes: deliveryNotes || null,
+      notes:
+        fulfillmentType === "pickup"
+          ? `[SELF PICKUP AT KITCHEN] ${deliveryNotes || ""}`
+          : deliveryNotes || null,
       subtotal,
-      delivery_fee: deliveryFee,
-      total_amount: totalAmount,
+      delivery_fee: finalDeliveryFee,
+      total_amount: finalTotalAmount,
       status: "pending_acceptance",
     })
     .select("id")
@@ -152,12 +212,6 @@ export async function placeCustomerOrder({
   }
 
   // Also notify the vendor user if found
-  const { data: vendor } = await adminClient
-    .from("vendors")
-    .select("user_id")
-    .eq("id", vendorId)
-    .single();
-
   if (vendor?.user_id) {
     await adminClient.from("notifications").insert({
       user_id: vendor.user_id,

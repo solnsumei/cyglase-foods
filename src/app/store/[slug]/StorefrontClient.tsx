@@ -8,7 +8,6 @@ import {
   Store,
   MapPin,
   Clock,
-  Phone,
   UtensilsCrossed,
   Plus,
   Minus,
@@ -18,8 +17,12 @@ import {
   AlertCircle,
   Loader2,
   Check,
-  ShieldCheck,
   ChevronRight,
+  Truck,
+  PackageCheck,
+  Mail,
+  User,
+  Phone,
 } from "lucide-react";
 import type { Database } from "@/types/database.types";
 import { placeCustomerOrder, CartItem } from "../../customer/actions";
@@ -52,9 +55,15 @@ export default function StorefrontClient({
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Fulfillment Method: Delivery vs Pickup
+  const [fulfillmentType, setFulfillmentType] = useState<"delivery" | "pickup">("delivery");
+
   // Customer form fields
   const [customerName, setCustomerName] = useState(
     currentUser?.user_metadata?.full_name || ""
+  );
+  const [customerEmail, setCustomerEmail] = useState(
+    currentUser?.email || ""
   );
   const [customerPhone, setCustomerPhone] = useState(
     currentUser?.user_metadata?.phone || ""
@@ -98,7 +107,8 @@ export default function StorefrontClient({
 
   const cartTotalItems = cart.reduce((acc, curr) => acc + curr.quantity, 0);
   const subtotal = cart.reduce((acc, curr) => acc + curr.price * curr.quantity, 0);
-  const totalAmount = subtotal + (cart.length > 0 ? DEFAULT_DELIVERY_FEE : 0);
+  const deliveryFee = fulfillmentType === "pickup" ? 0 : DEFAULT_DELIVERY_FEE;
+  const totalAmount = subtotal + deliveryFee;
 
   // Filtered menu
   const filteredItems = menuItems.filter((item) => {
@@ -115,13 +125,14 @@ export default function StorefrontClient({
       vendorId: vendor.id,
       customerName,
       customerPhone,
-      customerEmail: currentUser?.email,
+      customerEmail,
+      fulfillmentType,
       deliveryAddress,
       deliveryLandmark,
       deliveryNotes,
       items: cart,
       subtotal,
-      deliveryFee: DEFAULT_DELIVERY_FEE,
+      deliveryFee,
       totalAmount,
     });
 
@@ -136,6 +147,10 @@ export default function StorefrontClient({
       router.push(`/orders/${res.orderId}`);
     }
   };
+
+  // Fallback banner image if vendor hasn't uploaded one
+  const bannerImage =
+    vendor.banner_url || "/images/cuisines/jollof_party_dish.jpg";
 
   return (
     <div className="min-h-screen bg-base-200/40 pb-24">
@@ -171,67 +186,86 @@ export default function StorefrontClient({
 
       {/* Main Container */}
       <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
-        {/* Vendor Header Card */}
-        <div className="card bg-base-100 shadow-sm border border-base-200 rounded-3xl p-5 sm:p-6">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <span className="badge badge-sm badge-ghost text-xs font-semibold bg-base-200">
+        {/* Vendor Header Card with Cover Banner & Logo */}
+        <div className="card bg-base-100 shadow-sm border border-base-200 rounded-3xl overflow-hidden">
+          {/* Store Banner Image */}
+          <div className="relative h-36 sm:h-48 w-full bg-base-300">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={bannerImage}
+              alt={vendor.business_name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+          </div>
+
+          <div className="p-5 sm:p-6 relative pt-0">
+            {/* Overlapping Vendor Logo Avatar */}
+            <div className="-mt-10 sm:-mt-12 mb-3 flex items-end justify-between">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-base-100 p-1.5 shadow-xl border border-base-200">
+                {vendor.logo_url ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={vendor.logo_url}
+                    alt={vendor.business_name}
+                    className="w-full h-full object-cover rounded-xl"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black">
+                    <Store className="w-8 h-8 sm:w-10 sm:h-10" />
+                  </div>
+                )}
+              </div>
+
+              {vendor.is_open ? (
+                <span className="badge badge-success/15 text-success font-black border-none text-xs gap-1.5 py-3 px-3.5 rounded-xl">
+                  <span className="w-2 h-2 rounded-full bg-success"></span>
+                  Open for Orders
+                </span>
+              ) : (
+                <span className="badge badge-error/15 text-error font-black border-none text-xs gap-1.5 py-3 px-3.5 rounded-xl">
+                  <span className="w-2 h-2 rounded-full bg-error"></span>
+                  Kitchen Closed
+                </span>
+              )}
+            </div>
+
+            {/* Store Information (Phone Number & Settlement Hidden as requested) */}
+            <div>
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="badge badge-sm badge-ghost text-xs font-bold bg-base-200">
                   {vendor.city_area || "Lagos"}
                 </span>
-                {vendor.is_open ? (
-                  <span className="badge badge-sm badge-success/15 text-success font-bold border-none text-[11px] gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
-                    Open for Orders
-                  </span>
-                ) : (
-                  <span className="badge badge-sm badge-error/15 text-error font-bold border-none text-[11px] gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-error"></span>
-                    Kitchen Closed
-                  </span>
-                )}
               </div>
 
               <h1 className="text-xl sm:text-2xl font-black text-base-content tracking-tight">
                 {vendor.business_name}
               </h1>
 
-              <p className="text-xs text-base-content/65 flex items-center gap-1.5 mt-1">
+              {vendor.description && (
+                <p className="text-xs text-base-content/70 mt-1 line-clamp-2">
+                  {vendor.description}
+                </p>
+              )}
+
+              <p className="text-xs text-base-content/65 flex items-center gap-1.5 mt-2">
                 <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>{vendor.address || `${vendor.city_area}, ${vendor.city}`}</span>
               </p>
 
-              <div className="flex items-center gap-4 text-xs text-base-content/60 mt-2">
+              <div className="flex items-center gap-3 text-xs text-base-content/60 mt-1.5">
                 <div className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
                   <span>
                     {vendor.opening_time.slice(0, 5)} - {vendor.closing_time.slice(0, 5)}
                   </span>
                 </div>
-                {vendor.is_phone_public && (
-                  <div className="flex items-center gap-1">
-                    <Phone className="w-3.5 h-3.5 text-primary" />
-                    <span className="font-mono">{vendor.phone}</span>
-                  </div>
-                )}
               </div>
             </div>
-
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-black">
-              <Store className="w-7 h-7" />
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-base-200 flex items-center justify-between text-[11px] text-base-content/70">
-            <span className="flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-success" />
-              Direct Bank Transfer Settlement
-            </span>
-            <span>Delivery: ₦{DEFAULT_DELIVERY_FEE.toLocaleString()}</span>
           </div>
         </div>
 
-        {/* Category Pills */}
+        {/* Category Filter Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
           <button
             onClick={() => setSelectedCategory("all")}
@@ -338,7 +372,7 @@ export default function StorefrontClient({
         )}
       </main>
 
-      {/* Floating Bottom Cart Bar */}
+      {/* Floating Bottom Cart Trigger */}
       {cart.length > 0 && !isCartOpen && (
         <div className="fixed bottom-4 left-4 right-4 max-w-xl mx-auto z-40 animate-in slide-in-from-bottom duration-300">
           <button
@@ -365,184 +399,299 @@ export default function StorefrontClient({
         </div>
       )}
 
-      {/* Checkout Drawer / Modal */}
+      {/* Mobile-Friendly Cart Slide-over / Full Screen Sheet (Not a popup modal on mobile) */}
       {isCartOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-          <div className="bg-base-100 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-base-200 mb-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex sm:items-center sm:justify-center animate-in fade-in duration-200">
+          <div className="bg-base-100 w-full h-full sm:h-auto sm:max-h-[92vh] sm:max-w-lg sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 duration-200">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-base-200 bg-base-100 shrink-0">
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCartOpen(false)}
+                  className="btn btn-ghost btn-circle btn-sm sm:hidden"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
                 <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                   <ShoppingBag className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-base-content">
+                  <h3 className="font-bold text-sm sm:text-base text-base-content">
                     Order from {vendor.business_name}
                   </h3>
                   <p className="text-[11px] text-base-content/60">
-                    {cartTotalItems} dishes in cart
+                    {cartTotalItems} items in your tray
                   </p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setIsCartOpen(false)}
-                className="btn btn-ghost btn-sm btn-circle"
+                className="btn btn-ghost btn-sm btn-circle hidden sm:flex"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {errorMsg && (
-              <div className="alert alert-error text-xs py-2 mb-4 rounded-xl text-white">
-                <AlertCircle className="w-4 h-4" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
+            {/* Scrollable Content Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {errorMsg && (
+                <div className="alert alert-error text-xs py-2 rounded-xl text-white">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
 
-            {/* Cart Items List */}
-            <div className="space-y-2 mb-4">
-              {cart.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between p-2.5 bg-base-200/50 rounded-xl text-xs"
-                >
-                  <div className="flex-1 min-w-0 pr-2">
-                    <div className="font-bold text-base-content truncate">
-                      {item.name}
+              {/* Cart Items List */}
+              <div className="space-y-2">
+                {cart.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-3 bg-base-200/50 rounded-2xl text-xs"
+                  >
+                    <div className="flex-1 min-w-0 pr-2">
+                      <div className="font-bold text-base-content truncate">
+                        {item.name}
+                      </div>
+                      <div className="text-[11px] text-base-content/60">
+                        ₦{item.price.toLocaleString()} × {item.quantity}
+                      </div>
                     </div>
-                    <div className="text-[11px] text-base-content/60">
-                      ₦{item.price.toLocaleString()} × {item.quantity}
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => removeFromCart(item.id)}
+                        className="btn btn-ghost btn-xs btn-circle bg-base-100"
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="font-black px-1.5">{item.quantity}</span>
+                      <button
+                        onClick={() =>
+                          addToCart({
+                            id: item.id,
+                            name: item.name,
+                            price: item.price,
+                          } as any)
+                        }
+                        className="btn btn-ghost btn-xs btn-circle bg-base-100"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Fulfillment Method Selector: Delivery vs Pickup */}
+              <div className="space-y-2">
+                <label className="text-xs font-black text-base-content uppercase tracking-wider block">
+                  How would you like to receive your food?
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFulfillmentType("delivery")}
+                    className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
+                      fulfillmentType === "delivery"
+                        ? "border-primary bg-primary/5 text-primary font-bold shadow-xs"
+                        : "border-base-200 bg-base-100 text-base-content/70 hover:border-base-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 text-xs font-black">
+                      <Truck className="w-4 h-4" />
+                      <span>Doorstep Delivery</span>
+                    </div>
+                    <span className="text-[11px] text-base-content/60">
+                      Rider fee: ₦{DEFAULT_DELIVERY_FEE.toLocaleString()}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFulfillmentType("pickup")}
+                    className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
+                      fulfillmentType === "pickup"
+                        ? "border-primary bg-primary/5 text-primary font-bold shadow-xs"
+                        : "border-base-200 bg-base-100 text-base-content/70 hover:border-base-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 text-xs font-black">
+                      <PackageCheck className="w-4 h-4" />
+                      <span>Self Pickup</span>
+                    </div>
+                    <span className="text-[11px] text-success font-semibold">
+                      ₦0 (Free pickup)
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Price Breakdown */}
+              <div className="p-3.5 bg-base-200/50 rounded-2xl space-y-1.5 text-xs">
+                <div className="flex justify-between text-base-content/70">
+                  <span>Food Subtotal</span>
+                  <span className="font-bold">₦{subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-base-content/70">
+                  <span>
+                    {fulfillmentType === "delivery"
+                      ? "Delivery Fee"
+                      : "Self Pickup Fee"}
+                  </span>
+                  <span className="font-bold">
+                    {deliveryFee === 0 ? "FREE" : `₦${deliveryFee.toLocaleString()}`}
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-base-200 flex justify-between text-sm font-black text-base-content">
+                  <span>Total Amount</span>
+                  <span className="text-primary text-base">
+                    ₦{totalAmount.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Customer Account & Contact Details Form */}
+              <form id="checkout-form" onSubmit={handleCheckout} className="space-y-3">
+                <h4 className="font-black text-xs text-base-content uppercase tracking-wider">
+                  Contact & Account Details
+                </h4>
+
+                <div className="space-y-2.5">
+                  <div>
+                    <label className="label text-[11px] font-bold py-0.5 text-base-content/80">
+                      Your Full Name *
+                    </label>
+                    <div className="relative">
+                      <User className="w-3.5 h-3.5 text-base-content/40 absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        required
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="e.g. Amaka Okafor"
+                        className="input input-bordered input-sm pl-8 w-full rounded-xl text-xs font-semibold"
+                      />
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="btn btn-ghost btn-xs btn-circle bg-base-100"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="font-black px-1.5">{item.quantity}</span>
-                    <button
-                      onClick={() =>
-                        addToCart({
-                          id: item.id,
-                          name: item.name,
-                          price: item.price,
-                        } as any)
-                      }
-                      className="btn btn-ghost btn-xs btn-circle bg-base-100"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="label text-[11px] font-bold py-0.5 text-base-content/80">
+                        Email Address (Creates Account) *
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-3.5 h-3.5 text-base-content/40 absolute left-3 top-2.5" />
+                        <input
+                          type="email"
+                          required
+                          value={customerEmail}
+                          onChange={(e) => setCustomerEmail(e.target.value)}
+                          placeholder="amaka@email.com"
+                          className="input input-bordered input-sm pl-8 w-full rounded-xl text-xs font-semibold"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="label text-[11px] font-bold py-0.5 text-base-content/80">
+                        Phone Number *
+                      </label>
+                      <div className="relative">
+                        <Phone className="w-3.5 h-3.5 text-base-content/40 absolute left-3 top-2.5" />
+                        <input
+                          type="tel"
+                          required
+                          value={customerPhone}
+                          onChange={(e) => setCustomerPhone(e.target.value)}
+                          placeholder="0803 123 4567"
+                          className="input input-bordered input-sm pl-8 w-full rounded-xl text-xs font-mono font-semibold"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Price Breakdown */}
-            <div className="p-3 bg-base-200/40 rounded-2xl space-y-1.5 text-xs mb-4">
-              <div className="flex justify-between text-base-content/70">
-                <span>Subtotal</span>
-                <span className="font-bold">₦{subtotal.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-base-content/70">
-                <span>Delivery Fee</span>
-                <span className="font-bold">
-                  ₦{DEFAULT_DELIVERY_FEE.toLocaleString()}
-                </span>
-              </div>
-              <div className="pt-2 border-t border-base-200 flex justify-between text-sm font-black text-base-content">
-                <span>Total Amount</span>
-                <span className="text-primary text-base">
-                  ₦{totalAmount.toLocaleString()}
-                </span>
-              </div>
-            </div>
+                {/* Conditional Destination based on fulfillmentType */}
+                {fulfillmentType === "delivery" ? (
+                  <div className="space-y-2.5 pt-1">
+                    <h4 className="font-black text-xs text-base-content uppercase tracking-wider">
+                      Delivery Address
+                    </h4>
+                    <div>
+                      <input
+                        type="text"
+                        required
+                        value={deliveryAddress}
+                        onChange={(e) => setDeliveryAddress(e.target.value)}
+                        placeholder="House / Street address (e.g. Flat 4, 12 Borno Way, Yaba)"
+                        className="input input-bordered input-sm w-full rounded-xl text-xs"
+                      />
+                    </div>
 
-            {/* Delivery Form */}
-            <form onSubmit={handleCheckout} className="space-y-3">
-              <h4 className="font-black text-xs text-base-content uppercase tracking-wider">
-                Delivery Details
-              </h4>
+                    <div>
+                      <input
+                        type="text"
+                        value={deliveryLandmark}
+                        onChange={(e) => setDeliveryLandmark(e.target.value)}
+                        placeholder="Nearest Landmark (e.g. Near Ozone Cinemas)"
+                        className="input input-bordered input-sm w-full rounded-xl text-xs"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-base-200/60 rounded-2xl text-xs border border-base-200">
+                    <div className="font-bold text-primary flex items-center gap-1.5 mb-1">
+                      <MapPin className="w-3.5 h-3.5 shrink-0" />
+                      Pickup Location
+                    </div>
+                    <p className="text-base-content font-semibold">
+                      {vendor.business_name}
+                    </p>
+                    <p className="text-base-content/70 mt-0.5">
+                      {vendor.address}, {vendor.city_area}
+                    </p>
+                    {vendor.landmark && (
+                      <p className="text-[11px] text-base-content/50 mt-0.5">
+                        Landmark: {vendor.landmark}
+                      </p>
+                    )}
+                  </div>
+                )}
 
-              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="label text-[11px] font-bold py-0.5">
-                    Your Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="e.g. Amaka Okafor"
-                    className="input input-bordered input-sm w-full rounded-xl text-xs"
+                  <textarea
+                    rows={2}
+                    value={deliveryNotes}
+                    onChange={(e) => setDeliveryNotes(e.target.value)}
+                    placeholder="Optional notes for chef (e.g. extra pepper, no onions, call on arrival)"
+                    className="textarea textarea-bordered textarea-sm w-full rounded-xl text-xs"
                   />
                 </div>
+              </form>
+            </div>
 
-                <div>
-                  <label className="label text-[11px] font-bold py-0.5">
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    placeholder="0803 123 4567"
-                    className="input input-bordered input-sm w-full rounded-xl text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="label text-[11px] font-bold py-0.5">
-                  Delivery Address *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={deliveryAddress}
-                  onChange={(e) => setDeliveryAddress(e.target.value)}
-                  placeholder="e.g. Flat 4, 12 Borno Way, Yaba"
-                  className="input input-bordered input-sm w-full rounded-xl text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="label text-[11px] font-bold py-0.5">
-                  Nearest Landmark (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={deliveryLandmark}
-                  onChange={(e) => setDeliveryLandmark(e.target.value)}
-                  placeholder="e.g. Opposite Total Filling Station"
-                  className="input input-bordered input-sm w-full rounded-xl text-xs"
-                />
-              </div>
-
-              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-900 dark:text-amber-300">
-                <span className="font-bold">ℹ️ Payment Method:</span> Manual Bank
-                Transfer. Once the vendor accepts your order, you will receive the
-                vendor&apos;s bank account to transfer and upload receipt within the
-                timer.
-              </div>
-
+            {/* Drawer Footer with Sticky Button */}
+            <div className="p-4 sm:p-5 border-t border-base-200 bg-base-100 shrink-0">
               <button
                 type="submit"
+                form="checkout-form"
                 disabled={isCheckingOut}
-                className="btn btn-primary w-full rounded-xl text-white font-black text-sm shadow-lg shadow-primary/30 py-3"
+                className="btn btn-primary w-full rounded-xl text-white font-black text-sm shadow-lg shadow-primary/25 py-3"
               >
                 {isCheckingOut ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin" /> Placing Order...
                   </span>
                 ) : (
-                  <span>Place Order • ₦{totalAmount.toLocaleString()}</span>
+                  <span>
+                    Place Order • ₦{totalAmount.toLocaleString()}{" "}
+                    {fulfillmentType === "pickup" ? "(Pickup)" : "(Delivery)"}
+                  </span>
                 )}
               </button>
-            </form>
+            </div>
           </div>
         </div>
       )}

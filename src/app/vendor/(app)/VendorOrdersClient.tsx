@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Truck,
 } from "lucide-react";
+import ConfirmModal from "@/components/ConfirmModal";
 import type { Database, OrderStatus } from "@/types/database.types";
 
 type Order = Database["public"]["Tables"]["orders"]["Row"] & {
@@ -35,6 +36,7 @@ export default function VendorOrdersClient({
   const [rejectingOrderId, setRejectingOrderId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
 
   // Tabs: Active vs Completed
   const [filter, setFilter] = useState<"action_required" | "in_kitchen" | "all">(
@@ -64,7 +66,7 @@ export default function VendorOrdersClient({
     const res = await acceptOrder(orderId);
     setIsProcessing(null);
     if (res?.error) {
-      alert(res.error);
+      setAlertInfo({ title: "Cannot Accept Order", message: res.error });
     } else {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: "awaiting_payment" } : o))
@@ -78,7 +80,7 @@ export default function VendorOrdersClient({
     const res = await rejectOrder(rejectingOrderId, rejectReason);
     setIsProcessing(null);
     if (res?.error) {
-      alert(res.error);
+      setAlertInfo({ title: "Cannot Reject Order", message: res.error });
     } else {
       setOrders((prev) =>
         prev.map((o) => (o.id === rejectingOrderId ? { ...o, status: "rejected" } : o))
@@ -93,7 +95,7 @@ export default function VendorOrdersClient({
     const res = await confirmOrderPayment(orderId);
     setIsProcessing(null);
     if (res?.error) {
-      alert(res.error);
+      setAlertInfo({ title: "Payment Confirmation Error", message: res.error });
     } else {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: "preparing" } : o))
@@ -109,7 +111,7 @@ export default function VendorOrdersClient({
     const res = await updateOrderFulfillment(orderId, status);
     setIsProcessing(null);
     if (res?.error) {
-      alert(res.error);
+      setAlertInfo({ title: "Fulfillment Update Error", message: res.error });
     } else {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status } : o))
@@ -399,6 +401,17 @@ export default function VendorOrdersClient({
           ></div>
         </div>
       )}
+
+      {/* In-app Alert Modal */}
+      <ConfirmModal
+        isOpen={!!alertInfo}
+        title={alertInfo?.title || "Notice"}
+        message={alertInfo?.message || ""}
+        confirmText="Dismiss"
+        showCancel={false}
+        type="warning"
+        onConfirm={() => setAlertInfo(null)}
+      />
     </div>
   );
 }

@@ -17,6 +17,7 @@ import {
   Filter,
 } from "lucide-react";
 import { toggleItemStock, upsertMenuItem, deleteMenuItem } from "../../actions";
+import ConfirmModal from "@/components/ConfirmModal";
 import type { Database } from "@/types/database.types";
 
 type MenuItem = Database["public"]["Tables"]["menu_items"]["Row"] & {
@@ -45,6 +46,8 @@ export default function VendorMenuClient({
   const [actionError, setActionError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
 
   // Form State
   const [formName, setFormName] = useState("");
@@ -98,24 +101,30 @@ export default function VendorMenuClient({
           )
         );
       } else {
-        alert(res.error || "Failed to update stock");
+        setAlertInfo({
+          title: "Update Failed",
+          message: res.error || "Failed to update item stock status.",
+        });
       }
     } finally {
       setTogglingId(null);
     }
   };
 
-  const handleDelete = async (itemId: string, itemName: string) => {
-    if (!confirm(`Are you sure you want to remove "${itemName}" from your menu?`)) {
-      return;
-    }
-    setDeletingId(itemId);
+  const confirmDeleteItem = async () => {
+    if (!deleteTarget) return;
+    const { id } = deleteTarget;
+    setDeletingId(id);
+    setDeleteTarget(null);
     try {
-      const res = await deleteMenuItem(itemId);
+      const res = await deleteMenuItem(id);
       if (res.success) {
-        setItems((prev) => prev.filter((i) => i.id !== itemId));
+        setItems((prev) => prev.filter((i) => i.id !== id));
       } else {
-        alert(res.error || "Failed to delete item");
+        setAlertInfo({
+          title: "Delete Failed",
+          message: res.error || "Could not delete this menu item.",
+        });
       }
     } finally {
       setDeletingId(null);
@@ -349,7 +358,7 @@ export default function VendorMenuClient({
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => handleDelete(item.id, item.name)}
+                        onClick={() => setDeleteTarget({ id: item.id, name: item.name })}
                         disabled={isDeleting}
                         className="btn btn-ghost btn-xs btn-square text-base-content/40 hover:text-error hover:bg-error/10 rounded-lg"
                         title="Delete Dish"
@@ -510,6 +519,29 @@ export default function VendorMenuClient({
           </div>
         </div>
       )}
+
+      {/* In-app Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Remove Menu Dish"
+        message={`Are you sure you want to remove "${deleteTarget?.name}" from your food menu? This cannot be undone.`}
+        confirmText="Delete Dish"
+        cancelText="Keep Dish"
+        type="danger"
+        onConfirm={confirmDeleteItem}
+        onCancel={() => setDeleteTarget(null)}
+      />
+
+      {/* In-app Alert Modal */}
+      <ConfirmModal
+        isOpen={!!alertInfo}
+        title={alertInfo?.title || "Notice"}
+        message={alertInfo?.message || ""}
+        confirmText="Dismiss"
+        showCancel={false}
+        type="warning"
+        onConfirm={() => setAlertInfo(null)}
+      />
     </div>
   );
 }

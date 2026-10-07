@@ -20,6 +20,7 @@ import {
 import { updateVendorSettings } from "../../actions";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import ConfirmModal from "@/components/ConfirmModal";
 import type { Database } from "@/types/database.types";
 
 type Vendor = Database["public"]["Tables"]["vendors"]["Row"];
@@ -66,6 +67,7 @@ export default function VendorSettingsClient({ vendor }: { vendor: Vendor }) {
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   // Form State
   const [businessName, setBusinessName] = useState(vendor.business_name);
@@ -129,8 +131,8 @@ export default function VendorSettingsClient({ vendor }: { vendor: Vendor }) {
     }
   };
 
-  const handleSignOut = async () => {
-    if (!confirm("Are you sure you want to sign out?")) return;
+  const handleConfirmSignOut = async () => {
+    setShowSignOutConfirm(false);
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/vendor/login");
@@ -152,7 +154,8 @@ export default function VendorSettingsClient({ vendor }: { vendor: Vendor }) {
         </div>
 
         <button
-          onClick={handleSignOut}
+          type="button"
+          onClick={() => setShowSignOutConfirm(true)}
           className="btn btn-ghost btn-xs sm:btn-sm text-error hover:bg-error/10 gap-1 rounded-xl"
         >
           <LogOut className="w-3.5 h-3.5" />
@@ -476,6 +479,18 @@ export default function VendorSettingsClient({ vendor }: { vendor: Vendor }) {
           </button>
         </div>
       </form>
+
+      {/* In-app Sign Out Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showSignOutConfirm}
+        title="Sign Out of Kitchen"
+        message="Are you sure you want to log out of your vendor portal?"
+        confirmText="Sign Out"
+        cancelText="Stay Logged In"
+        type="warning"
+        onConfirm={handleConfirmSignOut}
+        onCancel={() => setShowSignOutConfirm(false)}
+      />
     </div>
   );
 }

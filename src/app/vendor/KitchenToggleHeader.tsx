@@ -5,6 +5,8 @@ import { toggleKitchenStatus } from "./actions";
 import { Power, Utensils } from "lucide-react";
 import Link from "next/link";
 
+import ConfirmModal from "@/components/ConfirmModal";
+
 export default function KitchenToggleHeader({
   vendorId,
   businessName,
@@ -16,6 +18,7 @@ export default function KitchenToggleHeader({
 }) {
   const [isOpen, setIsOpen] = useState(initialIsOpen);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleToggle = async () => {
     setIsUpdating(true);
@@ -25,7 +28,7 @@ export default function KitchenToggleHeader({
     setIsUpdating(false);
     if (res?.error) {
       setIsOpen(initialIsOpen);
-      alert(res.error);
+      setErrorMsg(res.error);
     }
   };
 
@@ -62,6 +65,17 @@ export default function KitchenToggleHeader({
           </span>
         </button>
       </div>
+
+      {/* In-app Error Modal */}
+      <ConfirmModal
+        isOpen={!!errorMsg}
+        title="Kitchen Status Error"
+        message={errorMsg || ""}
+        confirmText="Dismiss"
+        showCancel={false}
+        type="warning"
+        onConfirm={() => setErrorMsg(null)}
+      />
     </header>
   );
 }
