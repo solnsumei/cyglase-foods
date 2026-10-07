@@ -10,6 +10,10 @@ import {
   CheckCircle2,
   XCircle,
   Phone,
+  Eye,
+  EyeOff,
+  Shield,
+  Lock,
 } from "lucide-react";
 import type { Database } from "@/types/database.types";
 
@@ -20,6 +24,18 @@ type Vendor = Database["public"]["Tables"]["vendors"]["Row"] & {
   } | null;
 };
 
+function maskPhoneNumber(phone: string): string {
+  if (!phone || phone.length < 7) return "••••••••";
+  const start = phone.slice(0, 4);
+  const end = phone.slice(-3);
+  return `${start} ••• ${end}`;
+}
+
+function maskAccountNumber(account: string): string {
+  if (!account || account.length < 6) return "••••••••";
+  return `••••••${account.slice(-4)}`;
+}
+
 export default function VendorList({
   initialVendors,
 }: {
@@ -27,6 +43,8 @@ export default function VendorList({
 }) {
   const [vendors, setVendors] = useState(initialVendors);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const [revealedPhone, setRevealedPhone] = useState(false);
+  const [revealedAccount, setRevealedAccount] = useState(false);
 
   const handleToggle = async (vendor: Vendor) => {
     setVendors((prev) =>
@@ -41,17 +59,30 @@ export default function VendorList({
     }
   };
 
+  const openInspector = (vendor: Vendor) => {
+    setSelectedVendor(vendor);
+    setRevealedPhone(false);
+    setRevealedAccount(false);
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
-          <Store className="w-6 h-6 text-primary" />
-          Registered Food Vendors
-        </h1>
-        <p className="text-xs text-base-content/60 mt-1">
-          Review, approve, or suspend vendor storefronts operating on Cyglase Foods.
-        </p>
+      {/* Header with Privacy Indicator */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
+            <Store className="w-6 h-6 text-primary" />
+            Registered Food Vendors
+          </h1>
+          <p className="text-xs text-base-content/60 mt-1">
+            Commercial storefront directory, operating schedules, and verification statuses.
+          </p>
+        </div>
+
+        <div className="badge badge-outline gap-1.5 text-xs py-3 text-base-content/70">
+          <Shield className="w-3.5 h-3.5 text-primary" />
+          <span>NDPR Privacy Guard: Private PII Masked</span>
+        </div>
       </div>
 
       {/* Vendors Table / List */}
@@ -62,12 +93,12 @@ export default function VendorList({
               <table className="table table-zebra w-full text-xs">
                 <thead className="bg-base-200/60 text-base-content/70">
                   <tr>
-                    <th>Business Name</th>
-                    <th>Location</th>
-                    <th>Hours & Kitchen</th>
+                    <th>Storefront Name</th>
+                    <th>Commercial Kitchen Area</th>
+                    <th>Operating Hours</th>
                     <th>Contact & Payout</th>
                     <th className="text-center">Approval Status</th>
-                    <th className="text-right">Details</th>
+                    <th className="text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -82,8 +113,8 @@ export default function VendorList({
                             <div className="font-bold text-sm text-base-content">
                               {v.business_name}
                             </div>
-                            <div className="text-[11px] text-base-content/60">
-                              {v.profiles?.email || "No email"}
+                            <div className="text-[11px] text-base-content/50 font-mono">
+                              slug: /{v.slug}
                             </div>
                           </div>
                         </div>
@@ -98,7 +129,7 @@ export default function VendorList({
                         </div>
                         {v.landmark && (
                           <div className="text-[11px] text-base-content/50 truncate max-w-xs">
-                            Near: {v.landmark}
+                            Hub: {v.landmark}
                           </div>
                         )}
                       </td>
@@ -115,18 +146,25 @@ export default function VendorList({
                             v.is_open ? "badge-success text-white" : "badge-ghost"
                           }`}
                         >
-                          {v.is_open ? "Kitchen Open" : "Closed"}
+                          {v.is_open ? "Kitchen Taking Orders" : "Kitchen Closed"}
                         </span>
                       </td>
 
                       <td>
-                        <div className="flex items-center gap-1 text-xs">
-                          <Phone className="w-3 h-3 text-base-content/50" />
-                          <span className="font-mono">{v.phone}</span>
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <Phone className="w-3 h-3 text-base-content/40" />
+                          <span className="font-mono text-base-content/80">
+                            {v.is_phone_public ? v.phone : maskPhoneNumber(v.phone)}
+                          </span>
+                          {!v.is_phone_public && (
+                            <span className="badge badge-ghost text-[9px] py-0 px-1 font-medium">
+                              Private
+                            </span>
+                          )}
                         </div>
                         {v.bank_name && v.account_number && (
-                          <div className="text-[11px] text-base-content/60 font-mono mt-0.5">
-                            {v.bank_name} • {v.account_number}
+                          <div className="text-[11px] text-base-content/50 font-mono mt-0.5">
+                            {v.bank_name} • {maskAccountNumber(v.account_number)}
                           </div>
                         )}
                       </td>
@@ -135,7 +173,9 @@ export default function VendorList({
                         <button
                           onClick={() => handleToggle(v)}
                           className={`badge badge-sm font-semibold cursor-pointer transition-transform active:scale-95 ${
-                            v.is_active ? "badge-success text-white" : "badge-error text-white"
+                            v.is_active
+                              ? "badge-success text-white"
+                              : "badge-error text-white"
                           }`}
                         >
                           {v.is_active ? (
@@ -154,10 +194,10 @@ export default function VendorList({
 
                       <td className="text-right">
                         <button
-                          onClick={() => setSelectedVendor(v)}
+                          onClick={() => openInspector(v)}
                           className="btn btn-ghost btn-xs text-primary font-bold"
                         >
-                          Inspect
+                          View Store
                         </button>
                       </td>
                     </tr>
@@ -172,35 +212,48 @@ export default function VendorList({
                 No food vendors registered yet
               </h3>
               <p className="text-xs text-base-content/60 max-w-sm mx-auto mt-1">
-                When restaurants and kitchens complete onboarding, their profile and bank details will appear here for verification.
+                When restaurants register and complete storefront onboarding, their commercial kitchen profiles will appear here for verification.
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Vendor Inspect Modal */}
+      {/* Vendor Privacy-Safe Inspector Modal */}
       {selectedVendor && (
         <div className="modal modal-open">
           <div className="modal-box max-w-lg border border-base-300">
-            <h3 className="font-bold text-lg mb-1 flex items-center gap-2">
-              <Store className="w-5 h-5 text-primary" />
-              {selectedVendor.business_name}
-            </h3>
-            <p className="text-xs text-base-content/60 mb-4">
-              Registered by {selectedVendor.profiles?.email}
-            </p>
+            <div className="flex items-center justify-between border-b border-base-200 pb-3 mb-4">
+              <div>
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  <Store className="w-5 h-5 text-primary" />
+                  {selectedVendor.business_name}
+                </h3>
+                <span className="text-xs text-base-content/60">
+                  Storefront URL: <code className="font-mono">/vendor/{selectedVendor.slug}</code>
+                </span>
+              </div>
+              <span
+                className={`badge badge-sm font-semibold ${
+                  selectedVendor.is_active ? "badge-success text-white" : "badge-error text-white"
+                }`}
+              >
+                {selectedVendor.is_active ? "Approved" : "Suspended"}
+              </span>
+            </div>
 
             <div className="flex flex-col gap-4 text-xs">
+              {/* Commercial Dispatch Pickup Location */}
               <div className="p-3 rounded-xl bg-base-200/60 border border-base-300/40">
-                <span className="font-bold uppercase tracking-wider text-base-content/50 text-[10px]">
-                  Physical Location
+                <span className="font-bold uppercase tracking-wider text-base-content/50 text-[10px] flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-primary" />
+                  Commercial Kitchen / Rider Pickup Point
                 </span>
                 <p className="text-sm font-semibold mt-1">
                   {selectedVendor.address}
                 </p>
                 <p className="text-base-content/70 mt-0.5">
-                  Area: {selectedVendor.city_area}, City: {selectedVendor.city},{" "}
+                  {selectedVendor.city_area}, {selectedVendor.city},{" "}
                   {selectedVendor.state}
                 </p>
                 {selectedVendor.landmark && (
@@ -210,16 +263,76 @@ export default function VendorList({
                 )}
               </div>
 
+              {/* Contact with Privacy Unmasking for Support Escalation */}
               <div className="p-3 rounded-xl bg-base-200/60 border border-base-300/40">
-                <div className="flex items-center gap-2 mb-1">
-                  <Building2 className="w-4 h-4 text-primary" />
-                  <span className="font-bold uppercase tracking-wider text-base-content/50 text-[10px]">
-                    Direct Bank Transfer Payout Details
+                <div className="flex items-center justify-between">
+                  <span className="font-bold uppercase tracking-wider text-base-content/50 text-[10px] flex items-center gap-1">
+                    <Lock className="w-3 h-3 text-base-content/50" />
+                    Vendor Contact (Support Only)
                   </span>
+                  {!selectedVendor.is_phone_public && (
+                    <button
+                      onClick={() => setRevealedPhone(!revealedPhone)}
+                      className="btn btn-ghost btn-xs text-primary font-semibold gap-1 text-[11px]"
+                    >
+                      {revealedPhone ? (
+                        <>
+                          <EyeOff className="w-3 h-3" /> Hide
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-3 h-3" /> Unmask for Support
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
+
+                <div className="mt-2 font-mono text-sm font-bold flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 text-primary" />
+                  <span>
+                    {selectedVendor.is_phone_public || revealedPhone
+                      ? selectedVendor.phone
+                      : maskPhoneNumber(selectedVendor.phone)}
+                  </span>
+                  {!selectedVendor.is_phone_public && !revealedPhone && (
+                    <span className="badge badge-ghost badge-xs text-[10px]">
+                      Protected
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Payout Banking Information */}
+              <div className="p-3 rounded-xl bg-base-200/60 border border-base-300/40">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-primary" />
+                    <span className="font-bold uppercase tracking-wider text-base-content/50 text-[10px]">
+                      Disbursement Account
+                    </span>
+                  </div>
+                  {selectedVendor.account_number && (
+                    <button
+                      onClick={() => setRevealedAccount(!revealedAccount)}
+                      className="btn btn-ghost btn-xs text-primary font-semibold gap-1 text-[11px]"
+                    >
+                      {revealedAccount ? (
+                        <>
+                          <EyeOff className="w-3 h-3" /> Hide
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-3 h-3" /> Unmask
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-2 mt-2">
                   <div>
-                    <span className="text-base-content/60">Bank Name:</span>
+                    <span className="text-base-content/60">Bank:</span>
                     <p className="font-bold text-sm">
                       {selectedVendor.bank_name || "Not provided"}
                     </p>
@@ -227,40 +340,44 @@ export default function VendorList({
                   <div>
                     <span className="text-base-content/60">Account Number:</span>
                     <p className="font-mono font-bold text-sm">
-                      {selectedVendor.account_number || "Not provided"}
+                      {revealedAccount
+                        ? selectedVendor.account_number
+                        : maskAccountNumber(selectedVendor.account_number || "")}
                     </p>
                   </div>
                 </div>
+
                 {selectedVendor.account_name && (
                   <div className="mt-2">
                     <span className="text-base-content/60">Account Name:</span>
-                    <p className="font-semibold text-xs">
+                    <p className="font-semibold text-xs text-base-content/80">
                       {selectedVendor.account_name}
                     </p>
                   </div>
                 )}
               </div>
 
+              {/* Status Action */}
               <div className="flex items-center justify-between p-3 rounded-xl bg-base-200/60 border border-base-300/40">
                 <div>
                   <span className="font-bold uppercase tracking-wider text-base-content/50 text-[10px]">
-                    Platform Status
+                    Storefront Visibility
                   </span>
-                  <p className="text-xs font-semibold mt-0.5">
+                  <p className="text-xs text-base-content/70 mt-0.5">
                     {selectedVendor.is_active
-                      ? "Vendor is actively approved"
-                      : "Vendor is suspended / pending approval"}
+                      ? "Vendor is live and listed in public search"
+                      : "Vendor is suspended / hidden from customers"}
                   </p>
                 </div>
                 <button
                   onClick={() => handleToggle(selectedVendor)}
-                  className={`btn btn-sm ${
+                  className={`btn btn-sm font-bold ${
                     selectedVendor.is_active
                       ? "btn-error text-white"
                       : "btn-success text-white"
                   }`}
                 >
-                  {selectedVendor.is_active ? "Suspend Vendor" : "Approve Vendor"}
+                  {selectedVendor.is_active ? "Suspend Store" : "Approve Store"}
                 </button>
               </div>
             </div>
