@@ -117,6 +117,7 @@ export interface Database {
           logo_url: string | null;
           banner_url: string | null;
           state: string;
+          city: string;
           city_area: string;
           landmark: string | null;
           address: string;
@@ -142,6 +143,7 @@ export interface Database {
           logo_url?: string | null;
           banner_url?: string | null;
           state?: string;
+          city?: string;
           city_area: string;
           landmark?: string | null;
           address: string;
@@ -167,6 +169,7 @@ export interface Database {
           logo_url?: string | null;
           banner_url?: string | null;
           state?: string;
+          city?: string;
           city_area?: string;
           landmark?: string | null;
           address?: string;
@@ -238,6 +241,7 @@ export interface Database {
           rejection_reason: string | null;
           cancellation_reason: string | null;
           delivery_state: string;
+          delivery_city: string;
           delivery_city_area: string;
           delivery_landmark: string | null;
           delivery_address: string;
@@ -262,6 +266,7 @@ export interface Database {
           rejection_reason?: string | null;
           cancellation_reason?: string | null;
           delivery_state?: string;
+          delivery_city?: string;
           delivery_city_area: string;
           delivery_landmark?: string | null;
           delivery_address: string;
@@ -286,6 +291,7 @@ export interface Database {
           rejection_reason?: string | null;
           cancellation_reason?: string | null;
           delivery_state?: string;
+          delivery_city?: string;
           delivery_city_area?: string;
           delivery_landmark?: string | null;
           delivery_address?: string;

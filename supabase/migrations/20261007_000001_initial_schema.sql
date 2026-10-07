@@ -69,6 +69,7 @@ CREATE TABLE IF NOT EXISTS public.vendors (
   logo_url TEXT,
   banner_url TEXT,
   state TEXT NOT NULL DEFAULT 'Lagos',
+  city TEXT NOT NULL DEFAULT 'Lagos',
   city_area TEXT NOT NULL,
   landmark TEXT,
   address TEXT NOT NULL,
@@ -147,6 +148,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
   
   -- Delivery details
   delivery_state TEXT NOT NULL DEFAULT 'Lagos',
+  delivery_city TEXT NOT NULL DEFAULT 'Lagos',
   delivery_city_area TEXT NOT NULL,
   delivery_landmark TEXT,
   delivery_address TEXT NOT NULL,
