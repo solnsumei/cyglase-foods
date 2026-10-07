@@ -368,9 +368,9 @@ export default function HomeClient({
             </div>
             <Link
               href="/vendor/login"
-              className="text-xs font-black text-secondary hover:underline flex items-center gap-1"
+              className="text-[11px] font-bold text-secondary hover:underline flex items-center gap-0.5"
             >
-              Sell Food <ChevronRight className="w-3.5 h-3.5" />
+              Sell Food <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
 
