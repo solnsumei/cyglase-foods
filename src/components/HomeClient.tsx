@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type { Database } from "@/types/database.types";
 import CustomerBottomNav from "./CustomerBottomNav";
+import CustomerTopNav from "./CustomerTopNav";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -137,8 +138,11 @@ export default function HomeClient({
 
   return (
     <div className="min-h-screen bg-base-200/40 pb-24 md:pb-12">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-30 bg-base-100/90 backdrop-blur-md border-b border-base-200 px-4 py-3 sm:px-6">
+      {/* Top Menu Bar on Desktop */}
+      <CustomerTopNav user={user} isVendor={isVendor} />
+
+      {/* Top Navbar on Mobile */}
+      <header className="md:hidden sticky top-0 z-30 bg-base-100/90 backdrop-blur-md border-b border-base-200 px-4 py-3 sm:px-6">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-1.5 shrink-0">
             <div className="w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center font-black shadow-md shadow-primary/20">

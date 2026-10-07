@@ -12,6 +12,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import CustomerBottomNav from "@/components/CustomerBottomNav";
+import CustomerTopNav from "@/components/CustomerTopNav";
 
 export const dynamic = "force-dynamic";
 
@@ -24,19 +25,31 @@ export default async function CustomerOrdersPage() {
   const adminClient = createAdminClient();
 
   let orders: any[] = [];
+  let isVendor = false;
   if (user) {
-    const { data } = await adminClient
-      .from("orders")
-      .select("*, vendors(business_name, slug), order_items(*)")
-      .eq("customer_id", user.id)
-      .order("created_at", { ascending: false });
-    orders = data || [];
+    const [{ data: ordersData }, { data: vendorData }] = await Promise.all([
+      adminClient
+        .from("orders")
+        .select("*, vendors(business_name, slug), order_items(*)")
+        .eq("customer_id", user.id)
+        .order("created_at", { ascending: false }),
+      adminClient
+        .from("vendors")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]);
+    orders = ordersData || [];
+    isVendor = !!vendorData;
   }
 
   return (
     <div className="min-h-screen bg-base-200/40 pb-24 md:pb-12">
-      {/* Top Header */}
-      <header className="sticky top-0 z-30 bg-base-100/90 backdrop-blur-md border-b border-base-200 px-4 py-3 sm:px-6">
+      {/* Top Menu Bar on Desktop */}
+      <CustomerTopNav user={user} isVendor={isVendor} />
+
+      {/* Top Header on Mobile */}
+      <header className="md:hidden sticky top-0 z-30 bg-base-100/90 backdrop-blur-md border-b border-base-200 px-4 py-3 sm:px-6">
         <div className="max-w-xl mx-auto flex items-center justify-between">
           <Link
             href="/"
