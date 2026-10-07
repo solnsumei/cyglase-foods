@@ -1,0 +1,515 @@
+"use client";
+
+import { useState } from "react";
+import {
+  UtensilsCrossed,
+  Plus,
+  Search,
+  Edit2,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Loader2,
+  DollarSign,
+  Tag,
+  ChevronRight,
+  Filter,
+} from "lucide-react";
+import { toggleItemStock, upsertMenuItem, deleteMenuItem } from "../../actions";
+import type { Database } from "@/types/database.types";
+
+type MenuItem = Database["public"]["Tables"]["menu_items"]["Row"] & {
+  categories?: { name: string; slug: string } | null;
+};
+
+type Category = Database["public"]["Tables"]["categories"]["Row"];
+
+interface Props {
+  vendorId: string;
+  initialItems: MenuItem[];
+  categories: Category[];
+}
+
+export default function VendorMenuClient({
+  vendorId,
+  initialItems,
+  categories,
+}: Props) {
+  const [items, setItems] = useState<MenuItem[]>(initialItems);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Form State
+  const [formName, setFormName] = useState("");
+  const [formCategoryId, setFormCategoryId] = useState("");
+  const [formPrice, setFormPrice] = useState("");
+  const [formDescription, setFormDescription] = useState("");
+  const [formAvailable, setFormAvailable] = useState(true);
+
+  // Filter items
+  const filteredItems = items.filter((item) => {
+    const matchesCategory =
+      selectedCategory === "all" || item.category_id === selectedCategory;
+    const matchesSearch =
+      searchQuery === "" ||
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.description &&
+        item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
+
+  const openAddModal = () => {
+    setEditingItem(null);
+    setFormName("");
+    setFormCategoryId(categories[0]?.id || "");
+    setFormPrice("");
+    setFormDescription("");
+    setFormAvailable(true);
+    setActionError(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (item: MenuItem) => {
+    setEditingItem(item);
+    setFormName(item.name);
+    setFormCategoryId(item.category_id);
+    setFormPrice(item.price.toString());
+    setFormDescription(item.description || "");
+    setFormAvailable(item.is_available);
+    setActionError(null);
+    setIsModalOpen(true);
+  };
+
+  const handleStockToggle = async (item: MenuItem) => {
+    setTogglingId(item.id);
+    try {
+      const res = await toggleItemStock(item.id, item.is_available);
+      if (res.success) {
+        setItems((prev) =>
+          prev.map((i) =>
+            i.id === item.id ? { ...i, is_available: !i.is_available } : i
+          )
+        );
+      } else {
+        alert(res.error || "Failed to update stock");
+      }
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleDelete = async (itemId: string, itemName: string) => {
+    if (!confirm(`Are you sure you want to remove "${itemName}" from your menu?`)) {
+      return;
+    }
+    setDeletingId(itemId);
+    try {
+      const res = await deleteMenuItem(itemId);
+      if (res.success) {
+        setItems((prev) => prev.filter((i) => i.id !== itemId));
+      } else {
+        alert(res.error || "Failed to delete item");
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setActionError(null);
+
+    const formData = new FormData();
+    if (editingItem) formData.append("id", editingItem.id);
+    formData.append("vendor_id", vendorId);
+    formData.append("category_id", formCategoryId);
+    formData.append("name", formName);
+    formData.append("price", formPrice);
+    formData.append("description", formDescription);
+    formData.append("is_available", formAvailable ? "true" : "false");
+
+    try {
+      const res = await upsertMenuItem(formData);
+      if (res?.error) {
+        setActionError(res.error);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Successfully saved, update local state
+      const targetCat = categories.find((c) => c.id === formCategoryId);
+      if (editingItem) {
+        setItems((prev) =>
+          prev.map((i) =>
+            i.id === editingItem.id
+              ? {
+                  ...i,
+                  name: formName,
+                  category_id: formCategoryId,
+                  price: parseFloat(formPrice),
+                  description: formDescription || null,
+                  is_available: formAvailable,
+                  categories: targetCat
+                    ? { name: targetCat.name, slug: targetCat.slug }
+                    : i.categories,
+                }
+              : i
+          )
+        );
+      } else {
+        // Reload page to get created item with id
+        window.location.reload();
+      }
+
+      setIsModalOpen(false);
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Top Banner & Quick Add */}
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-base-content flex items-center gap-2">
+            <UtensilsCrossed className="w-6 h-6 text-primary" />
+            Kitchen Menu
+          </h1>
+          <p className="text-xs sm:text-sm text-base-content/60">
+            {items.length} dishes in your food catalogue
+          </p>
+        </div>
+
+        <button
+          onClick={openAddModal}
+          className="btn btn-primary btn-sm sm:btn-md gap-1.5 shadow-md shadow-primary/20 text-white rounded-xl"
+        >
+          <Plus className="w-4 h-4" />
+          <span className="font-bold">Add Dish</span>
+        </button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search your menu dishes..."
+          className="input input-bordered w-full pl-10 text-sm rounded-xl bg-base-100 shadow-sm"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-base-content/50 hover:text-base-content"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Category Pills Slider - Scrollable on mobile */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1.5 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+        <button
+          onClick={() => setSelectedCategory("all")}
+          className={`btn btn-xs sm:btn-sm rounded-full whitespace-nowrap px-3.5 font-medium transition-all ${
+            selectedCategory === "all"
+              ? "btn-primary text-white shadow-sm"
+              : "btn-ghost bg-base-100 hover:bg-base-200 border border-base-200 text-base-content/70"
+          }`}
+        >
+          All Dishes ({items.length})
+        </button>
+        {categories.map((cat) => {
+          const count = items.filter((i) => i.category_id === cat.id).length;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`btn btn-xs sm:btn-sm rounded-full whitespace-nowrap px-3.5 font-medium transition-all ${
+                selectedCategory === cat.id
+                  ? "btn-primary text-white shadow-sm"
+                  : "btn-ghost bg-base-100 hover:bg-base-200 border border-base-200 text-base-content/70"
+              }`}
+            >
+              {cat.name} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Menu List */}
+      {filteredItems.length === 0 ? (
+        <div className="card bg-base-100 shadow-sm border border-base-200 p-8 text-center rounded-2xl">
+          <div className="w-16 h-16 rounded-full bg-base-200 flex items-center justify-center mx-auto mb-3 text-base-content/40">
+            <UtensilsCrossed className="w-8 h-8" />
+          </div>
+          <h3 className="font-bold text-base text-base-content">
+            {searchQuery ? "No dishes match your search" : "No dishes in this category"}
+          </h3>
+          <p className="text-xs text-base-content/60 mt-1 max-w-xs mx-auto">
+            {searchQuery
+              ? "Try searching for a different food item or clear the filter."
+              : "Start adding mouthwatering meals, swallows, drinks or soups to attract buyers."}
+          </p>
+          <div className="mt-4">
+            <button
+              onClick={openAddModal}
+              className="btn btn-primary btn-sm rounded-xl text-white font-bold"
+            >
+              <Plus className="w-4 h-4 mr-1" /> Add Your First Dish
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3">
+          {filteredItems.map((item) => {
+            const isToggling = togglingId === item.id;
+            const isDeleting = deletingId === item.id;
+
+            return (
+              <div
+                key={item.id}
+                className={`card bg-base-100 shadow-sm border rounded-2xl transition-all p-4 ${
+                  item.is_available
+                    ? "border-base-200 hover:border-primary/30"
+                    : "border-base-300 bg-base-200/50 opacity-80"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="badge badge-sm badge-ghost font-medium text-xs bg-base-200 text-base-content/70 border-none">
+                        {item.categories?.name || "Dish"}
+                      </span>
+                      {item.is_available ? (
+                        <span className="badge badge-sm badge-success/15 text-success font-semibold border-none text-[11px] gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
+                          In Stock
+                        </span>
+                      ) : (
+                        <span className="badge badge-sm badge-error/15 text-error font-semibold border-none text-[11px] gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-error"></span>
+                          Sold Out
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="font-bold text-base text-base-content truncate">
+                      {item.name}
+                    </h3>
+
+                    {item.description && (
+                      <p className="text-xs text-base-content/65 line-clamp-2 mt-0.5">
+                        {item.description}
+                      </p>
+                    )}
+
+                    <div className="mt-2 text-base font-black text-primary flex items-center">
+                      ₦{Number(item.price).toLocaleString()}
+                    </div>
+                  </div>
+
+                  {/* Stock quick switch */}
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <div className="form-control">
+                      <label className="label cursor-pointer p-0 gap-1.5">
+                        <span className="text-[11px] font-semibold text-base-content/60">
+                          {item.is_available ? "Available" : "Off"}
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={item.is_available}
+                          disabled={isToggling}
+                          onChange={() => handleStockToggle(item)}
+                          className="toggle toggle-success toggle-sm"
+                        />
+                      </label>
+                    </div>
+
+                    {/* Edit & Delete Buttons */}
+                    <div className="flex items-center gap-1 mt-1">
+                      <button
+                        onClick={() => openEditModal(item)}
+                        className="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-primary hover:bg-primary/10 rounded-lg"
+                        title="Edit Dish"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item.id, item.name)}
+                        disabled={isDeleting}
+                        className="btn btn-ghost btn-xs btn-square text-base-content/40 hover:text-error hover:bg-error/10 rounded-lg"
+                        title="Delete Dish"
+                      >
+                        {isDeleting ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Add / Edit Dish Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-base-100 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-base-200 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                  <UtensilsCrossed className="w-4 h-4" />
+                </div>
+                <h3 className="font-bold text-lg text-base-content">
+                  {editingItem ? "Edit Dish" : "Add New Dish"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="btn btn-ghost btn-sm btn-circle"
+              >
+                ✕
+              </button>
+            </div>
+
+            {actionError && (
+              <div className="alert alert-error text-xs py-2 mb-4 rounded-xl">
+                <AlertCircle className="w-4 h-4" />
+                <span>{actionError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleFormSubmit} className="space-y-4">
+              <div>
+                <label className="label text-xs font-bold text-base-content/80 pb-1">
+                  Dish Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="e.g. Jollof Rice & Crispy Chicken"
+                  className="input input-bordered w-full rounded-xl text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="label text-xs font-bold text-base-content/80 pb-1">
+                    Category *
+                  </label>
+                  <select
+                    value={formCategoryId}
+                    onChange={(e) => setFormCategoryId(e.target.value)}
+                    required
+                    className="select select-bordered w-full rounded-xl text-sm"
+                  >
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="label text-xs font-bold text-base-content/80 pb-1">
+                    Price (₦ Naira) *
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-sm text-base-content/50">
+                      ₦
+                    </span>
+                    <input
+                      type="number"
+                      required
+                      min="50"
+                      step="50"
+                      value={formPrice}
+                      onChange={(e) => setFormPrice(e.target.value)}
+                      placeholder="2500"
+                      className="input input-bordered w-full pl-8 rounded-xl text-sm font-semibold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="label text-xs font-bold text-base-content/80 pb-1">
+                  Description / Portion Details (Optional)
+                </label>
+                <textarea
+                  value={formDescription}
+                  onChange={(e) => setFormDescription(e.target.value)}
+                  placeholder="e.g. Served with sweet fried dodo, spicy pepper sauce, and cold beverage of choice."
+                  rows={3}
+                  className="textarea textarea-bordered w-full rounded-xl text-sm"
+                />
+              </div>
+
+              <div className="p-3 bg-base-200/50 rounded-xl flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-xs text-base-content">
+                    Ready to prepare now?
+                  </div>
+                  <div className="text-[11px] text-base-content/60">
+                    Turn off if ingredient is temporarily out of stock
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formAvailable}
+                  onChange={(e) => setFormAvailable(e.target.checked)}
+                  className="toggle toggle-success"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="btn btn-ghost flex-1 rounded-xl text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="btn btn-primary flex-1 rounded-xl text-white font-bold text-sm shadow-md shadow-primary/20"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : editingItem ? (
+                    "Save Changes"
+                  ) : (
+                    "Add to Menu"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
