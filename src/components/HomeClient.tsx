@@ -363,10 +363,10 @@ export default function HomeClient({
             <div>
               <h2 className="text-base sm:text-lg font-black text-base-content flex items-center gap-1.5">
                 <Store className="w-4 h-4 text-primary" />
-                Featured Kitchens & Food Vendors
+                Featured Places & Outlets
               </h2>
               <p className="text-xs text-base-content/60">
-                Local home chefs and restaurants open for delivery
+                Local spots and food outlets open for pickup or delivery
               </p>
             </div>
             <Link

@@ -52,13 +52,13 @@ export default function CustomerBottomNav({
           <span className="text-[10px] tracking-tight">Search</span>
         </Link>
 
-        {/* Kitchens */}
+        {/* Outlets */}
         <a
           href="/#vendors"
           className="flex flex-col items-center justify-center gap-1 py-1 text-base-content/60 hover:text-primary transition-colors"
         >
           <Store className="w-5 h-5 stroke-[1.8]" />
-          <span className="text-[10px] tracking-tight">Kitchens</span>
+          <span className="text-[10px] tracking-tight">Outlets</span>
         </a>
 
         {/* Orders */}

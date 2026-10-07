@@ -314,7 +314,7 @@ export default function SearchClient({
               }`}
             >
               <Store className="w-3.5 h-3.5" />
-              <span>Kitchens</span>
+              <span>Places & Outlets</span>
               <span className="badge badge-sm badge-ghost text-[10px] font-black opacity-80">
                 {filteredKitchens.length}
               </span>
