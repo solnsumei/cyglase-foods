@@ -47,9 +47,23 @@ export default async function HomePage() {
       .limit(20),
   ]);
 
+  let isVendor = false;
+  if (user) {
+    const { data: vendorData } = await adminClient
+      .from("vendors")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (vendorData) {
+      isVendor = true;
+    }
+  }
+
   return (
     <HomeClient
       user={user}
+      isVendor={isVendor}
       categories={categories || []}
       vendors={vendors || []}
       featuredItems={featuredItems || []}

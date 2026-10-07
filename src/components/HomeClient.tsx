@@ -42,6 +42,7 @@ type MenuItem = Database["public"]["Tables"]["menu_items"]["Row"] & {
 
 interface Props {
   user: any;
+  isVendor?: boolean;
   categories: Category[];
   vendors: Vendor[];
   featuredItems: MenuItem[];
@@ -82,6 +83,7 @@ const CUISINE_SLIDES = [
 
 export default function HomeClient({
   user,
+  isVendor = false,
   categories,
   vendors,
   featuredItems,
@@ -210,11 +212,13 @@ export default function HomeClient({
                       <ShoppingBag className="w-4 h-4" /> My Orders
                     </Link>
                   </li>
-                  <li>
-                    <Link href="/vendor/login" className="py-2 text-secondary font-bold">
-                      <Store className="w-4 h-4" /> Vendor Dashboard
-                    </Link>
-                  </li>
+                  {isVendor && (
+                    <li>
+                      <Link href="/vendor" className="py-2 text-primary font-bold">
+                        <Store className="w-4 h-4" /> Kitchen Dashboard
+                      </Link>
+                    </li>
+                  )}
                   <li>
                     <button onClick={handleSignOut} className="py-2 text-error">
                       <LogOut className="w-4 h-4" /> Sign Out

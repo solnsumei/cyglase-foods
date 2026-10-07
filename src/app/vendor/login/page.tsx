@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { sendVendorOtp, verifyVendorOtp } from "../actions";
 import Link from "next/link";
+import OtpInput from "@/components/OtpInput";
 import {
   Utensils,
   Mail,
@@ -18,6 +19,7 @@ export default function VendorLoginPage() {
   const [authMode, setAuthMode] = useState<"login" | "register">("register");
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -34,17 +36,24 @@ export default function VendorLoginPage() {
       setErrorMsg(res.error);
     } else if (res?.success) {
       setEmail(res.email || "");
+      setOtp("");
       setStep("otp");
     }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!otp || otp.length < 6) {
+      setErrorMsg("Please enter all 6 digits of the code");
+      return;
+    }
+
     setIsLoading(true);
     setErrorMsg(null);
 
     const formData = new FormData(e.currentTarget);
     formData.append("email", email);
+    formData.set("token", otp);
     const res = await verifyVendorOtp(null, formData);
     setIsLoading(false);
 
@@ -217,25 +226,18 @@ export default function VendorLoginPage() {
                   </span>
                 </div>
 
-                <div className="form-control">
-                  <label className="label py-1">
-                    <span className="label-text font-bold text-xs text-center w-full">
-                      Enter Verification Code
+                <div className="form-control my-1">
+                  <label className="label py-1 justify-center">
+                    <span className="label-text font-bold text-xs text-center">
+                      Enter 6-Digit Verification Code
                     </span>
                   </label>
-                  <div className="relative">
-                    <KeyRound className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
-                    <input
-                      type="text"
-                      name="token"
-                      required
-                      maxLength={6}
-                      pattern="[0-9]{6}"
-                      placeholder="123456"
-                      autoFocus
-                      className="input input-bordered input-md pl-10 w-full text-center font-mono font-black text-lg tracking-widest focus:input-primary rounded-xl"
-                    />
-                  </div>
+                  <OtpInput
+                    value={otp}
+                    onChange={setOtp}
+                    disabled={isLoading}
+                    autoFocus={true}
+                  />
                 </div>
 
                 <button
