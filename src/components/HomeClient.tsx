@@ -454,7 +454,7 @@ export default function HomeClient({
             <div>
               <h2 className="text-base sm:text-lg font-black text-base-content flex items-center gap-1.5">
                 <Flame className="w-4 h-4 text-secondary" />
-                Popular Dishes Ready to Order
+                Dishes Ready to Order
               </h2>
               <p className="text-xs text-base-content/60">
                 Freshly prepared and packaged for doorstep dispatch
