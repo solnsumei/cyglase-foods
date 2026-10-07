@@ -1,23 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { sendVendorOtp, verifyVendorOtp } from "../actions";
+import { sendCustomerOtp, verifyCustomerOtp } from "../customer/actions";
 import Link from "next/link";
 import {
-  Utensils,
   Mail,
   KeyRound,
   ArrowLeft,
+  Utensils,
+  Phone,
+  User,
+  ShoppingBag,
   Store,
   Sparkles,
-  CheckCircle,
-  ChefHat,
 } from "lucide-react";
 
-export default function VendorLoginPage() {
-  const [authMode, setAuthMode] = useState<"login" | "register">("register");
-  const [step, setStep] = useState<"email" | "otp">("email");
+export default function CustomerLoginPage() {
+  const [authMode, setAuthMode] = useState<"register" | "login">("register");
+  const [step, setStep] = useState<"details" | "otp">("details");
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -27,7 +30,10 @@ export default function VendorLoginPage() {
     setErrorMsg(null);
 
     const formData = new FormData(e.currentTarget);
-    const res = await sendVendorOtp(null, formData);
+    formData.append("full_name", fullName);
+    formData.append("phone", phone);
+
+    const res = await sendCustomerOtp(null, formData);
     setIsLoading(false);
 
     if (res?.error) {
@@ -45,7 +51,10 @@ export default function VendorLoginPage() {
 
     const formData = new FormData(e.currentTarget);
     formData.append("email", email);
-    const res = await verifyVendorOtp(null, formData);
+    formData.append("full_name", fullName);
+    formData.append("phone", phone);
+
+    const res = await verifyCustomerOtp(null, formData);
     setIsLoading(false);
 
     if (res?.error) {
@@ -66,20 +75,20 @@ export default function VendorLoginPage() {
 
         {/* Brand Header */}
         <div className="text-center mb-5">
-          <div className="w-14 h-14 rounded-2xl bg-primary text-primary-content flex items-center justify-center mx-auto mb-3 shadow-lg shadow-primary/25">
-            <ChefHat className="w-7 h-7" />
+          <div className="w-14 h-14 rounded-2xl bg-secondary text-white flex items-center justify-center mx-auto mb-3 shadow-lg shadow-secondary/25">
+            <Utensils className="w-7 h-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
             <span className="text-primary">CYGLASE</span>{" "}
-            <span className="text-secondary">VENDOR</span>
+            <span className="text-secondary">FOODS</span>
           </h1>
           <p className="text-xs font-semibold text-base-content/60 mt-1">
-            Grow your food business & receive direct bank transfers
+            Order authentic Nigerian dishes & drinks from local kitchens
           </p>
         </div>
 
-        {/* Auth Mode Toggle Tabs (Register vs Log In) */}
-        {step === "email" && (
+        {/* Auth Mode Toggle Tabs (Register vs Sign In) */}
+        {step === "details" && (
           <div className="grid grid-cols-2 p-1 bg-base-300/60 rounded-2xl mb-4 text-xs font-bold">
             <button
               type="button"
@@ -94,7 +103,7 @@ export default function VendorLoginPage() {
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-warning" />
-              <span>Register Kitchen</span>
+              <span>Create Account</span>
             </button>
             <button
               type="button"
@@ -108,8 +117,8 @@ export default function VendorLoginPage() {
                   : "text-base-content/60 hover:text-base-content"
               }`}
             >
-              <Store className="w-3.5 h-3.5" />
-              <span>Vendor Log In</span>
+              <User className="w-3.5 h-3.5" />
+              <span>Sign In</span>
             </button>
           </div>
         )}
@@ -123,33 +132,54 @@ export default function VendorLoginPage() {
               </div>
             )}
 
-            {step === "email" ? (
-              <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
-                {authMode === "register" ? (
-                  <div className="bg-primary/5 border border-primary/15 rounded-2xl p-3.5 mb-1">
-                    <h3 className="font-black text-xs text-primary flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Quick 2-Minute Onboarding
-                    </h3>
-                    <p className="text-[11px] text-base-content/70 mt-1 leading-relaxed">
-                      Enter your email to verify and set up your kitchen storefront, dishes, and bank payout details.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-left mb-1">
-                    <h3 className="font-black text-sm text-base-content">
-                      Welcome Back, Chef!
-                    </h3>
-                    <p className="text-[11px] text-base-content/60">
-                      Sign in to manage your kitchen orders and live menu stock.
-                    </p>
-                  </div>
+            {step === "details" ? (
+              <form onSubmit={handleSendOtp} className="flex flex-col gap-3.5">
+                {authMode === "register" && (
+                  <>
+                    <div className="form-control">
+                      <label className="label py-1">
+                        <span className="label-text font-bold text-xs text-base-content/80">
+                          Full Name
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <User className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
+                        <input
+                          type="text"
+                          required
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="e.g. Tunde Adeyemi"
+                          className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-control">
+                      <label className="label py-1">
+                        <span className="label-text font-bold text-xs text-base-content/80">
+                          Phone Number (For Delivery Rider)
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <Phone className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
+                        <input
+                          type="tel"
+                          required
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="0803 123 4567"
+                          className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-mono"
+                        />
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 <div className="form-control">
                   <label className="label py-1">
                     <span className="label-text font-bold text-xs text-base-content/80">
-                      {authMode === "register" ? "Business Email Address" : "Registered Vendor Email"}
+                      Email Address
                     </span>
                   </label>
                   <div className="relative">
@@ -158,7 +188,7 @@ export default function VendorLoginPage() {
                       type="email"
                       name="email"
                       required
-                      placeholder="e.g. chef@mamatolafoods.com"
+                      placeholder="you@email.com"
                       className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
                     />
                   </div>
@@ -167,46 +197,31 @@ export default function VendorLoginPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="btn btn-primary w-full mt-1 font-black shadow-lg shadow-primary/25 rounded-xl text-white text-sm py-3.5"
+                  className="btn btn-primary w-full mt-2 font-black shadow-lg shadow-primary/25 rounded-xl text-white text-sm py-3.5"
                 >
                   {isLoading ? (
                     <span className="loading loading-spinner loading-sm"></span>
                   ) : authMode === "register" ? (
-                    "Register & Get Started 🚀"
+                    "Register & Get Verification Code"
                   ) : (
-                    "Send One-Time Login Code"
+                    "Send One-Time Code"
                   )}
                 </button>
 
                 <p className="text-[11px] text-base-content/50 text-center">
-                  🔒 Passwordless login with Supabase OTP email verification
+                  🔒 Secure passwordless sign in. We send a 6-digit OTP code to your email.
                 </p>
 
-                {/* Footer Switcher */}
-                <div className="pt-2 border-t border-base-200 text-center text-xs text-base-content/70">
-                  {authMode === "register" ? (
-                    <span>
-                      Already have a vendor account?{" "}
-                      <button
-                        type="button"
-                        onClick={() => setAuthMode("login")}
-                        className="text-primary font-bold hover:underline"
-                      >
-                        Sign in here
-                      </button>
-                    </span>
-                  ) : (
-                    <span>
-                      Want to sell your food on Cyglase?{" "}
-                      <button
-                        type="button"
-                        onClick={() => setAuthMode("register")}
-                        className="text-primary font-bold hover:underline"
-                      >
-                        Register your kitchen
-                      </button>
-                    </span>
-                  )}
+                {/* Footer Link for Vendors */}
+                <div className="pt-3 border-t border-base-200 text-center text-xs text-base-content/70">
+                  Are you a food vendor?{" "}
+                  <Link
+                    href="/vendor/login"
+                    className="text-secondary font-black hover:underline inline-flex items-center gap-1"
+                  >
+                    <Store className="w-3.5 h-3.5" />
+                    Register Your Kitchen
+                  </Link>
                 </div>
               </form>
             ) : (
@@ -245,38 +260,20 @@ export default function VendorLoginPage() {
                 >
                   {isLoading ? (
                     <span className="loading loading-spinner loading-sm"></span>
-                  ) : authMode === "register" ? (
-                    "Verify & Complete Setup"
                   ) : (
-                    "Verify & Open Kitchen"
+                    "Confirm & Start Ordering 🍲"
                   )}
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setStep("email")}
+                  onClick={() => setStep("details")}
                   className="btn btn-ghost btn-xs text-base-content/60"
                 >
                   Use a different email
                 </button>
               </form>
             )}
-          </div>
-        </div>
-
-        {/* Feature Badges for Onboarding Confidence */}
-        <div className="grid grid-cols-3 gap-2 mt-6 text-center text-[11px] text-base-content/70">
-          <div className="p-2.5 bg-base-100 rounded-2xl border border-base-200">
-            <span className="font-bold text-primary block">0% Signup Fee</span>
-            Free registration
-          </div>
-          <div className="p-2.5 bg-base-100 rounded-2xl border border-base-200">
-            <span className="font-bold text-primary block">Direct Payouts</span>
-            Customer bank transfers
-          </div>
-          <div className="p-2.5 bg-base-100 rounded-2xl border border-base-200">
-            <span className="font-bold text-primary block">Instant Control</span>
-            Live stock & hours
           </div>
         </div>
       </div>
