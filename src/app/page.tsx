@@ -3,12 +3,15 @@ export default function Home() {
     <main className="min-h-screen bg-base-200/50 flex flex-col">
       {/* Top Navbar */}
       <header className="navbar bg-base-100 shadow-sm border-b border-base-200 px-4 lg:px-8">
-        <div className="flex-1">
-          <span className="text-xl font-bold tracking-tight text-primary">
-            Cyglase Foods
+        <div className="flex-1 items-center gap-1">
+          <span className="text-2xl font-black tracking-tight text-primary">
+            CYGLASE
           </span>
-          <span className="badge badge-soft badge-primary ml-2 text-xs">
-            Scaffold Ready
+          <span className="text-2xl font-black tracking-tight text-secondary ml-1">
+            FOODS
+          </span>
+          <span className="badge badge-secondary badge-sm ml-3 font-semibold text-[11px] shadow-sm">
+            We do Delivery Too
           </span>
         </div>
         <div className="flex-none gap-2">
