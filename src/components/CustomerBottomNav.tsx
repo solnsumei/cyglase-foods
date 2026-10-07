@@ -19,7 +19,6 @@ export default function CustomerBottomNav({
   }
 
   const isHome = pathname === "/";
-  const isSearch = pathname.startsWith("/search");
   const isOutlets = pathname.startsWith("/outlets");
   const isOrders = pathname.startsWith("/orders");
   const isAccount = pathname.startsWith("/account");
@@ -28,7 +27,7 @@ export default function CustomerBottomNav({
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-base-100/95 backdrop-blur-md border-t border-base-200 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] md:hidden">
-      <div className="grid grid-cols-5 h-16 items-center px-1 max-w-md mx-auto">
+      <div className="grid grid-cols-4 h-16 items-center px-1 max-w-md mx-auto">
         {/* Home */}
         <Link
           href="/"
@@ -40,15 +39,6 @@ export default function CustomerBottomNav({
         >
           <Home className={`w-5 h-5 ${isHome ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
           <span className="text-[10px] tracking-tight">Home</span>
-        </Link>
-
-        {/* Search */}
-        <Link
-          href="/#search"
-          className="flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition-colors text-base-content/60 hover:text-base-content"
-        >
-          <Search className="w-5 h-5 stroke-[1.8]" />
-          <span className="text-[10px] tracking-tight">Search</span>
         </Link>
 
         {/* Outlets */}

@@ -63,17 +63,6 @@ interface Props {
   initialArea?: string;
 }
 
-const POPULAR_SEARCHES = [
-  "Party Jollof",
-  "Egusi & Pounded Yam",
-  "Spicy Beef Suya",
-  "Zobo Juice",
-  "Goat Meat Pepper Soup",
-  "Fried Rice & Chicken",
-  "Puff-Puff",
-  "Amala & Ewedu",
-];
-
 const CUISINE_SLIDES = [
   {
     title: "Smoky Party Jollof & Dodo",
@@ -144,38 +133,28 @@ export default function HomeClient({
     }
   }, []);
 
-  // Compute available states from database + vendors
+  // Compute available states: only include states where at least one vendor exists
   const allStates = useMemo(() => {
-    const dbStateNames = locationStates.map((s) => s.name);
-    const vendorStateNames = vendors.map((v) => v.state || "Lagos").filter(Boolean);
-    const combined = Array.from(new Set([...dbStateNames, ...vendorStateNames]));
-    return combined.sort();
-  }, [locationStates, vendors]);
+    const vendorStateNames = vendors
+      .map((v) => v.state)
+      .filter((s): s is string => Boolean(s && s.trim()));
+    return Array.from(new Set(vendorStateNames)).sort();
+  }, [vendors]);
 
-  // Compute available cities/areas for the selected state
+  // Compute available cities/areas for the selected state where vendors exist
   const availableAreas = useMemo(() => {
-    let areasFromDb: string[] = [];
-    if (selectedState === "all") {
-      locationStates.forEach((s) => {
-        (s.cities || []).forEach((c) => areasFromDb.push(c.name));
-      });
-    } else {
-      const match = locationStates.find(
-        (s) => s.name.toLowerCase() === selectedState.toLowerCase()
-      );
-      if (match && match.cities) {
-        areasFromDb = match.cities.map((c) => c.name);
-      }
-    }
-
     const areasFromVendors = vendors
-      .filter((v) => selectedState === "all" || (v.state || "Lagos") === selectedState)
+      .filter(
+        (v) =>
+          selectedState === "all" ||
+          (v.state || "Lagos").toLowerCase() === selectedState.toLowerCase()
+      )
       .map((v) => v.city_area)
       .filter(Boolean);
 
-    const combined = Array.from(new Set([...areasFromDb, ...areasFromVendors]));
-    return combined.sort();
-  }, [locationStates, vendors, selectedState]);
+    return Array.from(new Set(areasFromVendors)).sort();
+  }, [vendors, selectedState]);
+
 
   // Filter Dishes
   const filteredDishes = useMemo(() => {
@@ -427,30 +406,9 @@ export default function HomeClient({
             </button>
           </div>
 
-          {/* Quick Popular Search Tags */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
-            <span className="text-[11px] font-bold text-base-content/50 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-warning" /> Popular:
-            </span>
-            {POPULAR_SEARCHES.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => setQuery(tag)}
-                className={`btn btn-xs rounded-full px-3 whitespace-nowrap transition-all font-semibold ${
-                  query.toLowerCase() === tag.toLowerCase()
-                    ? "btn-primary text-white shadow-xs"
-                    : "btn-ghost bg-base-100/80 hover:bg-base-200 border border-base-200/80 text-base-content/75"
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-
           {/* Collapsible Location & Detail Filters Panel */}
           {showFilters && (
-            <div className="card bg-base-100 p-4 sm:p-5 rounded-3xl border border-base-200 shadow-md space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="card bg-base-100/95 backdrop-blur-md p-4 sm:p-5 rounded-3xl border border-base-200 shadow-md space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="flex items-center justify-between pb-2 border-b border-base-200">
                 <span className="text-xs font-black uppercase tracking-wider text-base-content/70 flex items-center gap-1.5">
                   <Filter className="w-3.5 h-3.5 text-primary" />
@@ -461,7 +419,7 @@ export default function HomeClient({
                     onClick={handleClearFilters}
                     className="text-xs font-bold text-primary hover:underline"
                   >
-                    Reset all filters
+                    Reset all
                   </button>
                 )}
               </div>
@@ -478,9 +436,9 @@ export default function HomeClient({
                       setSelectedState(e.target.value);
                       setSelectedArea("all");
                     }}
-                    className="select select-bordered select-sm w-full rounded-xl bg-base-200/50 font-semibold text-xs"
+                    className="select select-bordered select-sm w-full rounded-xl bg-base-100 font-semibold text-xs border-base-300 shadow-xs"
                   >
-                    <option value="all">All States (Nigeria)</option>
+                    <option value="all">All States</option>
                     {allStates.map((st) => (
                       <option key={st} value={st}>
                         {st}
@@ -497,7 +455,7 @@ export default function HomeClient({
                   <select
                     value={selectedArea}
                     onChange={(e) => setSelectedArea(e.target.value)}
-                    className="select select-bordered select-sm w-full rounded-xl bg-base-200/50 font-semibold text-xs"
+                    className="select select-bordered select-sm w-full rounded-xl bg-base-100 font-semibold text-xs border-base-300 shadow-xs"
                   >
                     <option value="all">All Areas</option>
                     {availableAreas.map((area) => (
@@ -516,7 +474,7 @@ export default function HomeClient({
                   <select
                     value={priceRange}
                     onChange={(e) => setPriceRange(e.target.value)}
-                    className="select select-bordered select-sm w-full rounded-xl bg-base-200/50 font-semibold text-xs"
+                    className="select select-bordered select-sm w-full rounded-xl bg-base-100 font-semibold text-xs border-base-300 shadow-xs"
                   >
                     <option value="all">Any Price</option>
                     <option value="under-2500">Under ₦2,500</option>
@@ -533,7 +491,7 @@ export default function HomeClient({
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="select select-bordered select-sm w-full rounded-xl bg-base-200/50 font-semibold text-xs"
+                    className="select select-bordered select-sm w-full rounded-xl bg-base-100 font-semibold text-xs border-base-300 shadow-xs"
                   >
                     <option value="recommended">Recommended</option>
                     <option value="price-low">Price: Low to High</option>
@@ -636,7 +594,7 @@ export default function HomeClient({
                 onClick={handleClearFilters}
                 className="btn btn-ghost btn-xs text-primary font-bold self-start sm:self-auto hover:bg-primary/20 rounded-xl"
               >
-                Clear Search & Filters
+                Reset all
               </button>
             </div>
 
@@ -663,7 +621,7 @@ export default function HomeClient({
                       onClick={handleClearFilters}
                       className="btn btn-primary btn-sm rounded-xl text-white font-bold"
                     >
-                      Clear All Filters
+                      Reset all
                     </button>
                   </div>
                 </div>
