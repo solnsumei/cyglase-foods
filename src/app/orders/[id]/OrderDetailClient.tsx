@@ -114,11 +114,11 @@ export default function OrderDetailClient({
       <header className="sticky top-0 z-30 bg-base-100/90 backdrop-blur-md border-b border-base-200 px-4 py-3 sm:px-6">
         <div className="max-w-xl mx-auto flex items-center justify-between">
           <Link
-            href="/"
+            href="/orders"
             className="btn btn-ghost btn-xs sm:btn-sm gap-1 text-base-content/70 hover:text-primary rounded-xl"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="font-semibold text-xs">Food Market</span>
+            <span className="font-semibold text-xs">Back</span>
           </Link>
 
           <span className="font-mono text-xs font-bold text-base-content/60">

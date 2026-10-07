@@ -56,7 +56,7 @@ export default async function CustomerOrdersPage() {
             className="btn btn-ghost btn-xs sm:btn-sm gap-1 text-base-content/70 hover:text-primary rounded-xl"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="font-semibold text-xs">Food Market</span>
+            <span className="font-semibold text-xs">Back</span>
           </Link>
 
           <h1 className="font-black text-sm text-base-content flex items-center gap-1.5">

@@ -94,7 +94,7 @@ function CustomerLoginContent() {
           className="inline-flex items-center gap-2 text-xs font-semibold text-base-content/60 hover:text-primary mb-5 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Food Market
+          Back
         </Link>
 
         {/* Brand Header */}

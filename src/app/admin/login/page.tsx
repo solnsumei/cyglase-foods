@@ -16,7 +16,7 @@ export default function AdminLoginPage() {
           className="inline-flex items-center gap-2 text-sm text-base-content/70 hover:text-primary transition-colors mb-6 mx-auto block w-fit"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Store
+          Back
         </Link>
 
         <div className="flex justify-center items-center gap-2 mb-2">
