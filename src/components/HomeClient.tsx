@@ -416,7 +416,7 @@ export default function HomeClient({
                           </span>
                         )}
                       </div>
-                      <h3 className="font-bold text-base text-base-content truncate">
+                      <h3 className="font-bold text-sm sm:text-[15px] text-base-content truncate">
                         {vendor.business_name}
                       </h3>
                       <p className="text-xs text-base-content/60 flex items-center gap-1 mt-0.5 truncate">
