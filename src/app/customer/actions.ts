@@ -25,7 +25,17 @@ export async function sendCustomerOtp(prevState: unknown, formData: FormData) {
     },
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    console.error("sendCustomerOtp error:", error.message);
+    const msg = error.message.toLowerCase();
+    if (msg.includes("database error")) {
+      return { error: "Unable to find or verify this account. Please try again shortly." };
+    }
+    if (msg.includes("rate limit") || msg.includes("too many requests")) {
+      return { error: "Too many attempts. Please wait a moment before requesting another code." };
+    }
+    return { error: error.message || "Failed to send verification code. Please try again." };
+  }
   return { success: true, email, fullName, phone };
 }
 
@@ -45,6 +55,10 @@ export async function verifyCustomerOtp(prevState: unknown, formData: FormData) 
   });
 
   if (error || !data.user) {
+    const msg = error?.message?.toLowerCase() || "";
+    if (msg.includes("database error")) {
+      return { error: "Authentication service error. Please request a new code and try again." };
+    }
     return { error: error?.message || "Invalid or expired OTP code." };
   }
 

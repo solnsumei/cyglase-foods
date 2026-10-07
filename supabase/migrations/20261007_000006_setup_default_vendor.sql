@@ -40,6 +40,30 @@ BEGIN
     SELECT id INTO v_vendor_user_id FROM auth.users WHERE email = v_vendor_email;
   END IF;
 
+  -- 1b. Ensure identity row exists in auth.identities for GoTrue OTP verification
+  INSERT INTO auth.identities (
+    provider_id,
+    user_id,
+    identity_data,
+    provider,
+    last_sign_in_at,
+    created_at,
+    updated_at
+  ) VALUES (
+    v_vendor_user_id::text,
+    v_vendor_user_id,
+    jsonb_build_object(
+      'sub', v_vendor_user_id::text,
+      'email', v_vendor_email,
+      'email_verified', true,
+      'full_name', v_business_name
+    ),
+    'email',
+    timezone('utc'::text, now()),
+    timezone('utc'::text, now()),
+    timezone('utc'::text, now())
+  ) ON CONFLICT (provider_id, provider) DO NOTHING;
+
   -- 2. Create or update profile in public.profiles with vendor role
   INSERT INTO public.profiles (id, email, full_name, role)
   VALUES (
