@@ -212,6 +212,11 @@ export default function HomeClient({
                     {user.email}
                   </li>
                   <li>
+                    <Link href="/account" className="py-2">
+                      <User className="w-4 h-4" /> My Account
+                    </Link>
+                  </li>
+                  <li>
                     <Link href="/orders" className="py-2">
                       <ShoppingBag className="w-4 h-4" /> My Orders
                     </Link>

@@ -22,7 +22,9 @@ export default function CustomerBottomNav({
   const isSearch = pathname.startsWith("/search");
   const isOutlets = pathname.startsWith("/outlets");
   const isOrders = pathname.startsWith("/orders");
+  const isAccount = pathname.startsWith("/account");
   const isAuth = pathname === "/login" || pathname === "/register";
+  const isAccountActive = isAccount || isAuth;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-base-100/95 backdrop-blur-md border-t border-base-200 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] md:hidden">
@@ -88,14 +90,14 @@ export default function CustomerBottomNav({
 
         {/* Account / Sign In */}
         <Link
-          href={isLoggedIn ? "/orders" : "/login"}
+          href={isLoggedIn ? "/account" : "/login"}
           className={`flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition-colors ${
-            isAuth
+            isAccountActive
               ? "text-primary font-black"
               : "text-base-content/60 hover:text-base-content"
           }`}
         >
-          <User className={`w-5 h-5 ${isAuth ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
+          <User className={`w-5 h-5 ${isAccountActive ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
           <span className="text-[10px] tracking-tight">
             {isLoggedIn ? "Account" : "Sign In"}
           </span>

@@ -117,6 +117,11 @@ export default function CustomerTopNav({
                   Signed in as <span className="font-bold text-base-content">{user.email}</span>
                 </li>
                 <li>
+                  <Link href="/account" className="py-2.5">
+                    <User className="w-4 h-4" /> My Account
+                  </Link>
+                </li>
+                <li>
                   <Link href="/orders" className="py-2.5">
                     <ShoppingBag className="w-4 h-4" /> My Orders
                   </Link>
