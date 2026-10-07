@@ -414,14 +414,26 @@ export default function HomeClient({
                   <Filter className="w-3.5 h-3.5 text-primary" />
                   Filter by State, Area & Price
                 </span>
-                {hasActiveFilters && (
+                <div className="flex items-center gap-2">
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      onClick={handleClearFilters}
+                      className="text-xs font-bold text-primary hover:underline"
+                    >
+                      Reset all
+                    </button>
+                  )}
                   <button
-                    onClick={handleClearFilters}
-                    className="text-xs font-bold text-primary hover:underline"
+                    type="button"
+                    onClick={() => setShowFilters(false)}
+                    className="btn btn-ghost btn-circle btn-xs text-base-content/60 hover:text-base-content hover:bg-base-200"
+                    title="Close filters"
+                    aria-label="Close filters"
                   >
-                    Reset all
+                    <X className="w-4 h-4" />
                   </button>
-                )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -501,8 +513,8 @@ export default function HomeClient({
                 </div>
               </div>
 
-              {/* Open Kitchens Only Checkbox */}
-              <div className="pt-2 border-t border-base-200/80 flex items-center justify-between">
+              {/* Open Kitchens Only Checkbox & Close action */}
+              <div className="pt-3 border-t border-base-200/80 flex items-center justify-between gap-3 flex-wrap">
                 <label className="label cursor-pointer justify-start gap-3 p-0">
                   <input
                     type="checkbox"
@@ -514,6 +526,15 @@ export default function HomeClient({
                     Show open kitchens accepting orders only
                   </span>
                 </label>
+
+                <button
+                  type="button"
+                  onClick={() => setShowFilters(false)}
+                  className="btn btn-xs sm:btn-sm btn-ghost hover:bg-base-200 text-xs font-bold rounded-xl ml-auto gap-1"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Close Filters
+                </button>
               </div>
             </div>
           )}

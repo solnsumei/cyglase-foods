@@ -88,27 +88,15 @@ export default function VendorOnboardingPage() {
                     }}
                     className="select select-bordered select-md w-full text-xs font-semibold"
                   >
-                    {dbLocations.length > 0
-                      ? dbLocations.map((st) => (
-                          <option key={st.id} value={st.name}>
-                            {st.name}
-                          </option>
-                        ))
-                      : [
-                          "Lagos",
-                          "Abuja (FCT)",
-                          "Rivers",
-                          "Delta",
-                          "Edo",
-                          "Ogun",
-                          "Oyo",
-                          "Kano",
-                          "Enugu",
-                        ].map((st) => (
-                          <option key={st} value={st}>
-                            {st}
-                          </option>
-                        ))}
+                    {dbLocations.length > 0 ? (
+                      dbLocations.map((st) => (
+                        <option key={st.id} value={st.name}>
+                          {st.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">Loading states...</option>
+                    )}
                   </select>
                 </div>
 

@@ -271,27 +271,15 @@ function VendorLoginContent() {
                         }}
                         className="select select-bordered select-md w-full focus:select-primary text-sm rounded-xl font-medium"
                       >
-                        {dbLocations.length > 0
-                          ? dbLocations.map((st) => (
+                        {dbLocations.length > 0 ? (
+                          dbLocations.map((st) => (
                             <option key={st.id} value={st.name}>
                               {st.name}
                             </option>
                           ))
-                          : [
-                            "Lagos",
-                            "Abuja (FCT)",
-                            "Rivers",
-                            "Delta",
-                            "Edo",
-                            "Ogun",
-                            "Oyo",
-                            "Kano",
-                            "Enugu",
-                          ].map((st) => (
-                            <option key={st} value={st}>
-                              {st}
-                            </option>
-                          ))}
+                        ) : (
+                          <option value="">Loading states...</option>
+                        )}
                       </select>
                     </div>
                     <div className="form-control">
