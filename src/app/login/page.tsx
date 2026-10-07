@@ -9,12 +9,12 @@ import {
   Mail,
   KeyRound,
   ArrowLeft,
-  Utensils,
   Phone,
   User,
   ShoppingBag,
   Store,
   Sparkles,
+  ChefHat,
 } from "lucide-react";
 
 function CustomerLoginContent() {
@@ -99,8 +99,8 @@ function CustomerLoginContent() {
 
         {/* Brand Header */}
         <div className="text-center mb-5">
-          <div className="w-14 h-14 rounded-2xl bg-secondary text-white flex items-center justify-center mx-auto mb-3 shadow-lg shadow-secondary/25">
-            <Utensils className="w-7 h-7" />
+          <div className="w-14 h-14 rounded-2xl bg-primary text-primary-content flex items-center justify-center mx-auto mb-3 shadow-lg shadow-primary/25">
+            <ChefHat className="w-7 h-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
             <span className="text-primary">CYGLASE</span>{" "}

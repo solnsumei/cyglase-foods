@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { loginAdmin } from "../actions";
 import Link from "next/link";
-import { Utensils, Shield, ArrowLeft } from "lucide-react";
+import { ChefHat, Shield, ArrowLeft } from "lucide-react";
 
 export default function AdminLoginPage() {
   const [state, formAction, isPending] = useActionState(loginAdmin, null);
@@ -21,7 +21,7 @@ export default function AdminLoginPage() {
 
         <div className="flex justify-center items-center gap-2 mb-2">
           <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-primary-content shadow-lg shadow-primary/20">
-            <Utensils className="w-6 h-6" />
+            <ChefHat className="w-6 h-6" />
           </div>
         </div>
 
