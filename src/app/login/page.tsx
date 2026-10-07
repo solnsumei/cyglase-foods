@@ -213,14 +213,14 @@ export default function CustomerLoginPage() {
                 </p>
 
                 {/* Footer Link for Vendors */}
-                <div className="pt-3 border-t border-base-200 text-center text-xs text-base-content/70">
-                  Are you a food vendor?{" "}
+                <div className="pt-3 border-t border-base-200 flex flex-wrap items-center justify-center gap-1.5 text-xs text-base-content/70">
+                  <span>Are you a food vendor?</span>
                   <Link
                     href="/vendor/login"
                     className="text-secondary font-black hover:underline inline-flex items-center gap-1"
                   >
-                    <Store className="w-3.5 h-3.5" />
-                    Register Your Kitchen
+                    <Store className="w-3.5 h-3.5 shrink-0" />
+                    <span>Register Your Kitchen</span>
                   </Link>
                 </div>
               </form>
