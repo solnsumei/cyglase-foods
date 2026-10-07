@@ -237,7 +237,7 @@ export default function AccountClient({
 
           {/* Search Cuisines */}
           <Link
-            href="/search"
+            href="/#search"
             className="card bg-base-100 shadow-sm border border-base-200 hover:border-primary/40 p-5 rounded-2xl transition-all group flex flex-row items-center justify-between"
           >
             <div className="flex items-center gap-3.5 min-w-0">

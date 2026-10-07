@@ -45,7 +45,7 @@ export default function CustomerTopNav({
 
   const navLinks = [
     { href: "/", label: "Home", icon: Home, active: isHome },
-    { href: "/search", label: "Search", icon: Search, active: isSearch },
+    { href: "/#search", label: "Search", icon: Search, active: false },
     { href: "/outlets", label: "Outlets", icon: Store, active: isOutlets },
     { href: "/orders", label: "Orders", icon: ShoppingBag, active: isOrders },
   ];

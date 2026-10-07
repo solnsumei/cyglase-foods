@@ -1,96 +1,25 @@
-import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import SearchClient from "./SearchClient";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Search Dishes & Food | Cyglase Foods",
-  description: "Search Nigerian dishes, party jollof, soups, swallows, grills, drinks, and local kitchens near you.",
-};
+interface SearchPageProps {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}
 
-export default async function SearchPage() {
-  const supabase = await createClient();
-  const adminClient = createAdminClient();
+export default async function SearchPage(props: SearchPageProps) {
+  const searchParams = await props.searchParams;
+  const params = new URLSearchParams();
 
-  const [
-    {
-      data: { user },
-    },
-    { data: categories },
-    { data: vendors },
-    { data: menuItems },
-  ] = await Promise.all([
-    supabase.auth.getUser(),
-    adminClient
-      .from("categories")
-      .select("*")
-      .eq("is_active", true)
-      .order("display_order", { ascending: true }),
-    adminClient
-      .from("vendors")
-      .select("*")
-      .eq("is_active", true)
-      .order("business_name", { ascending: true }),
-    adminClient
-      .from("menu_items")
-      .select(`
-        *,
-        vendors (
-          id,
-          business_name,
-          slug,
-          city_area,
-          city,
-          state,
-          is_open,
-          logo_url,
-          banner_url
-        ),
-        categories (
-          id,
-          name,
-          slug
-        )
-      `)
-      .eq("is_available", true)
-      .order("created_at", { ascending: false }),
-  ]);
-
-  let isVendor = false;
-  if (user) {
-    const { data: vendorData } = await adminClient
-      .from("vendors")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (vendorData) {
-      isVendor = true;
+  if (searchParams) {
+    for (const [key, val] of Object.entries(searchParams)) {
+      if (typeof val === "string") {
+        params.set(key, val);
+      } else if (Array.isArray(val) && val[0]) {
+        params.set(key, val[0]);
+      }
     }
   }
 
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
-          <div className="flex flex-col items-center gap-3">
-            <span className="loading loading-spinner loading-lg text-primary"></span>
-            <p className="text-sm font-semibold text-base-content/60">
-              Loading fresh Nigerian dishes...
-            </p>
-          </div>
-        </div>
-      }
-    >
-      <SearchClient
-        user={user}
-        isVendor={isVendor}
-        categories={categories || []}
-        vendors={vendors || []}
-        initialItems={menuItems || []}
-      />
-    </Suspense>
-  );
+  const qs = params.toString();
+  redirect(qs ? `/?${qs}` : "/#search");
 }

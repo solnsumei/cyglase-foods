@@ -1,10 +1,26 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import HomeClient from "@/components/HomeClient";
+import { getStatesWithCities } from "@/lib/locations";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+interface HomePageProps {
+  searchParams?: Promise<{
+    q?: string;
+    category?: string;
+    state?: string;
+    area?: string;
+  }>;
+}
+
+export default async function HomePage(props: HomePageProps) {
+  const searchParams = await props.searchParams;
+  const initialQuery = searchParams?.q || "";
+  const initialCategory = searchParams?.category || "all";
+  const initialState = searchParams?.state || "all";
+  const initialArea = searchParams?.area || "all";
+
   const supabase = await createClient();
   const adminClient = createAdminClient();
 
@@ -14,7 +30,8 @@ export default async function HomePage() {
     },
     { data: categories },
     { data: vendors },
-    { data: featuredItems },
+    { data: allItems },
+    locationStates,
   ] = await Promise.all([
     supabase.auth.getUser(),
     adminClient
@@ -32,19 +49,25 @@ export default async function HomePage() {
       .select(`
         *,
         vendors (
+          id,
           business_name,
           slug,
           city_area,
-          is_open
+          city,
+          state,
+          is_open,
+          logo_url,
+          banner_url
         ),
         categories (
+          id,
           name,
           slug
         )
       `)
       .eq("is_available", true)
-      .order("created_at", { ascending: false })
-      .limit(20),
+      .order("created_at", { ascending: false }),
+    getStatesWithCities(true),
   ]);
 
   let isVendor = false;
@@ -66,7 +89,12 @@ export default async function HomePage() {
       isVendor={isVendor}
       categories={categories || []}
       vendors={vendors || []}
-      featuredItems={featuredItems || []}
+      initialItems={allItems || []}
+      locationStates={locationStates || []}
+      initialQuery={initialQuery}
+      initialCategory={initialCategory}
+      initialState={initialState}
+      initialArea={initialArea}
     />
   );
 }

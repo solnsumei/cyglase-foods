@@ -44,14 +44,10 @@ export default function CustomerBottomNav({
 
         {/* Search */}
         <Link
-          href="/search"
-          className={`flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition-colors ${
-            isSearch
-              ? "text-primary font-black"
-              : "text-base-content/60 hover:text-base-content"
-          }`}
+          href="/#search"
+          className="flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition-colors text-base-content/60 hover:text-base-content"
         >
-          <Search className={`w-5 h-5 ${isSearch ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
+          <Search className="w-5 h-5 stroke-[1.8]" />
           <span className="text-[10px] tracking-tight">Search</span>
         </Link>
 
