@@ -1,69 +1,162 @@
-import Image from "next/image";
-
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-base-200/50 flex flex-col">
+      {/* Top Navbar */}
+      <header className="navbar bg-base-100 shadow-sm border-b border-base-200 px-4 lg:px-8">
+        <div className="flex-1">
+          <span className="text-xl font-bold tracking-tight text-primary">
+            Cyglase Foods
+          </span>
+          <span className="badge badge-soft badge-primary ml-2 text-xs">
+            Scaffold Ready
+          </span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="flex-none gap-2">
+          <span className="badge badge-outline text-xs">Next.js 16 + daisyUI 5</span>
         </div>
-      </main>
-    </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="flex-1 max-w-5xl w-full mx-auto p-6 md:p-10 flex flex-col gap-8">
+        {/* Welcome Hero / Status */}
+        <section className="card bg-base-100 shadow-sm border border-base-200">
+          <div className="card-body">
+            <h1 className="card-title text-2xl md:text-3xl font-bold">
+              Project Scaffold Complete 🚀
+            </h1>
+            <p className="text-base-content/70 mt-1">
+              Your Next.js project is configured with TypeScript, Tailwind CSS v4, daisyUI 5, and Supabase integration.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+              <div className="p-4 rounded-xl bg-base-200/60 border border-base-300/40">
+                <div className="text-xs uppercase tracking-wider text-base-content/60 font-semibold">
+                  Framework
+                </div>
+                <div className="text-lg font-bold mt-1">Next.js 16</div>
+                <div className="text-xs text-success font-medium mt-0.5">App Router + Turbopack</div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-base-200/60 border border-base-300/40">
+                <div className="text-xs uppercase tracking-wider text-base-content/60 font-semibold">
+                  Language
+                </div>
+                <div className="text-lg font-bold mt-1">TypeScript 5</div>
+                <div className="text-xs text-success font-medium mt-0.5">Strict mode enabled</div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-base-200/60 border border-base-300/40">
+                <div className="text-xs uppercase tracking-wider text-base-content/60 font-semibold">
+                  Styling & UI
+                </div>
+                <div className="text-lg font-bold mt-1">daisyUI 5</div>
+                <div className="text-xs text-success font-medium mt-0.5">Tailwind CSS v4 engine</div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-base-200/60 border border-base-300/40">
+                <div className="text-xs uppercase tracking-wider text-base-content/60 font-semibold">
+                  Backend
+                </div>
+                <div className="text-lg font-bold mt-1">Supabase</div>
+                <div className="text-xs text-success font-medium mt-0.5">@supabase/ssr utilities</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Supabase Integration Details */}
+        <section className="card bg-base-100 shadow-sm border border-base-200">
+          <div className="card-body">
+            <h2 className="card-title text-xl font-bold">
+              Supabase Configuration
+            </h2>
+            <p className="text-sm text-base-content/70">
+              The project structure includes pre-configured client, server, and middleware modules for Supabase:
+            </p>
+
+            <div className="overflow-x-auto mt-4">
+              <table className="table table-zebra w-full text-sm">
+                <thead>
+                  <tr>
+                    <th>File</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="font-mono text-xs">src/lib/supabase/client.ts</td>
+                    <td><span className="badge badge-sm badge-info">Client</span></td>
+                    <td>Browser client for client components via <code>createBrowserClient</code></td>
+                  </tr>
+                  <tr>
+                    <td className="font-mono text-xs">src/lib/supabase/server.ts</td>
+                    <td><span className="badge badge-sm badge-primary">Server</span></td>
+                    <td>Server client for Server Components, Server Actions & Route Handlers</td>
+                  </tr>
+                  <tr>
+                    <td className="font-mono text-xs">src/lib/supabase/middleware.ts</td>
+                    <td><span className="badge badge-sm badge-secondary">Middleware</span></td>
+                    <td>Session token refresher invoked by Next.js middleware</td>
+                  </tr>
+                  <tr>
+                    <td className="font-mono text-xs">src/middleware.ts</td>
+                    <td><span className="badge badge-sm badge-ghost">Routing</span></td>
+                    <td>Global request interceptor keeping Supabase auth cookies in sync</td>
+                  </tr>
+                  <tr>
+                    <td className="font-mono text-xs">src/types/database.types.ts</td>
+                    <td><span className="badge badge-sm badge-accent">Types</span></td>
+                    <td>Database TypeScript schema definitions interface</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="alert alert-info mt-6 text-sm">
+              <span>
+                To connect to your live project, add your Supabase project URL and anon key into <code className="font-mono font-bold">.env.local</code>.
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* daisyUI Component Verification */}
+        <section className="card bg-base-100 shadow-sm border border-base-200">
+          <div className="card-body">
+            <h2 className="card-title text-xl font-bold">
+              daisyUI 5 Component Verification
+            </h2>
+            <p className="text-sm text-base-content/70">
+              Sample daisyUI components verifying styling and utility classes:
+            </p>
+
+            <div className="flex flex-wrap gap-2 mt-4">
+              <button className="btn btn-primary btn-sm">Primary</button>
+              <button className="btn btn-secondary btn-sm">Secondary</button>
+              <button className="btn btn-accent btn-sm">Accent</button>
+              <button className="btn btn-neutral btn-sm">Neutral</button>
+              <button className="btn btn-outline btn-sm">Outline</button>
+              <button className="btn btn-ghost btn-sm">Ghost</button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mt-3">
+              <span className="badge badge-primary">Primary</span>
+              <span className="badge badge-secondary">Secondary</span>
+              <span className="badge badge-success">Success</span>
+              <span className="badge badge-warning">Warning</span>
+              <span className="badge badge-error">Error</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* Footer */}
+      <footer className="footer footer-center p-4 bg-base-100 text-base-content/60 border-t border-base-200 text-xs">
+        <div>
+          <p>© 2026 Cyglase Foods - Scaffolded with Next.js, daisyUI & Supabase</p>
+        </div>
+      </footer>
+    </main>
   );
 }
