@@ -19,6 +19,7 @@ export default function CustomerBottomNav({
   }
 
   const isHome = pathname === "/";
+  const isSearch = pathname.startsWith("/search");
   const isOrders = pathname.startsWith("/orders");
   const isAuth = pathname === "/login" || pathname === "/register";
 
@@ -39,13 +40,17 @@ export default function CustomerBottomNav({
         </Link>
 
         {/* Search */}
-        <a
-          href="/#search"
-          className="flex flex-col items-center justify-center gap-1 py-1 text-base-content/60 hover:text-primary transition-colors"
+        <Link
+          href="/search"
+          className={`flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition-colors ${
+            isSearch
+              ? "text-primary font-black"
+              : "text-base-content/60 hover:text-base-content"
+          }`}
         >
-          <Search className="w-5 h-5 stroke-[1.8]" />
+          <Search className={`w-5 h-5 ${isSearch ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
           <span className="text-[10px] tracking-tight">Search</span>
-        </a>
+        </Link>
 
         {/* Kitchens */}
         <a

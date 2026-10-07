@@ -237,23 +237,39 @@ export default function HomeClient({
       {/* Main Container */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-4 space-y-6">
         {/* Search Bar with Anchor */}
-        <div id="search" className="relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search Jollof, Egusi, Suya, Zobo, or local kitchen..."
-            className="input input-bordered w-full pl-10 pr-10 text-sm rounded-2xl bg-base-100 shadow-sm focus:input-primary h-12"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="btn btn-ghost btn-circle btn-xs absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
+        <div id="search" className="relative flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-base-content/40" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && searchQuery.trim()) {
+                  router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                }
+              }}
+              placeholder="Search Jollof, Egusi, Suya, Zobo, or local kitchen..."
+              className="input input-bordered w-full pl-10 pr-10 text-sm rounded-2xl bg-base-100 shadow-xs focus:input-primary h-12"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="btn btn-ghost btn-circle btn-xs absolute right-3 top-1/2 -translate-y-1/2"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <Link
+            href={searchQuery.trim() ? `/search?q=${encodeURIComponent(searchQuery.trim())}` : "/search"}
+            className="btn btn-primary h-12 px-4 rounded-2xl text-white font-bold shrink-0 shadow-xs"
+            title="Open Full Search Page"
+          >
+            <Search className="w-4 h-4 hidden sm:inline" />
+            <span>Search</span>
+          </Link>
         </div>
 
         {/* Hero Nigerian Cuisine Feature Carousel */}
