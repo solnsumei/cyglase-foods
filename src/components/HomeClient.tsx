@@ -507,7 +507,7 @@ export default function HomeClient({
                         )}
                       </div>
 
-                      <h3 className="font-bold text-sm text-base-content truncate">
+                      <h3 className="font-bold text-xs sm:text-[13px] text-base-content truncate">
                         {item.name}
                       </h3>
 
