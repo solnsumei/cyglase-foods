@@ -402,7 +402,7 @@ export default function SearchClient({
           <div>
             {filteredDishes.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredDishes.map((dish) => {
+                {filteredDishes.map((dish, index) => {
                   const vendorSlug = dish.vendors?.slug || "";
                   const isOpen = dish.vendors?.is_open ?? true;
 
@@ -417,6 +417,7 @@ export default function SearchClient({
                             src={dish.image_url}
                             alt={dish.name}
                             fill
+                            priority={index < 2}
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                           />
@@ -556,7 +557,7 @@ export default function SearchClient({
           <div>
             {filteredKitchens.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredKitchens.map((vendor) => {
+                {filteredKitchens.map((vendor, index) => {
                   const kitchenDishesCount = initialItems.filter(
                     (item) => item.vendor_id === vendor.id
                   ).length;
@@ -574,6 +575,7 @@ export default function SearchClient({
                             src={vendor.banner_url}
                             alt={vendor.business_name}
                             fill
+                            priority={index < 2}
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                           />
