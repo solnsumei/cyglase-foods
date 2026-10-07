@@ -104,12 +104,10 @@ export default function CustomerTopNav({
             <div className="dropdown dropdown-end">
               <label
                 tabIndex={0}
-                className="btn btn-ghost btn-sm gap-2 rounded-2xl bg-base-200/70 border border-base-300/60 font-bold text-xs"
+                className="btn btn-ghost btn-circle btn-sm bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                title={user.email}
               >
-                <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center font-black text-xs">
-                  {user.email?.[0]?.toUpperCase() || "U"}
-                </div>
-                <span className="max-w-[120px] truncate">{user.email}</span>
+                <User className="w-4 h-4" />
               </label>
               <ul
                 tabIndex={0}
