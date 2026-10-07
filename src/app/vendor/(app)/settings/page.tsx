@@ -1,6 +1,7 @@
 import { requireVendor } from "@/lib/vendor";
 import VendorSettingsClient from "./VendorSettingsClient";
 import { redirect } from "next/navigation";
+import { getStatesWithCities } from "@/lib/locations";
 
 export const dynamic = "force-dynamic";
 
@@ -11,5 +12,8 @@ export default async function VendorSettingsPage() {
     redirect("/vendor/onboarding");
   }
 
-  return <VendorSettingsClient vendor={vendor} />;
+  const locationStates = await getStatesWithCities();
+
+  return <VendorSettingsClient vendor={vendor} locationStates={locationStates} />;
 }
+

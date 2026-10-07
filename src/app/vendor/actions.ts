@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getStatesWithCities } from "@/lib/locations";
+
 
 // 1. Email OTP Sign In & Kitchen Registration
 export async function sendVendorOtp(prevState: unknown, formData: FormData) {
@@ -431,3 +433,9 @@ export async function updateVendorSettings(formData: FormData) {
   revalidatePath("/vendor");
   return { success: true };
 }
+
+// 7. Database Locations Helper (Replaces hardcoded states & cities)
+export async function getDbLocations() {
+  return await getStatesWithCities();
+}
+

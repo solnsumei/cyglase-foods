@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { sendVendorOtp, verifyVendorOtp } from "../actions";
+import { sendVendorOtp, verifyVendorOtp, getDbLocations } from "../actions";
 import Link from "next/link";
 import OtpInput from "@/components/OtpInput";
 import {
@@ -31,6 +31,7 @@ function VendorLoginContent() {
   const [phone, setPhone] = useState("");
   const [state, setState] = useState("Lagos");
   const [cityArea, setCityArea] = useState("");
+  const [dbLocations, setDbLocations] = useState<any[]>([]);
   const [otp, setOtp] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,6 +44,18 @@ function VendorLoginContent() {
       setAuthMode("login");
     }
   }, [searchParams]);
+
+  // Load active states and cities directly from database
+  useEffect(() => {
+    getDbLocations().then((locs) => {
+      if (locs && locs.length > 0) {
+        setDbLocations(locs);
+        if (!state) {
+          setState(locs[0].name);
+        }
+      }
+    });
+  }, []);
 
   const handleSendOtp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -131,11 +144,10 @@ function VendorLoginContent() {
                 setAuthMode("register");
                 setErrorMsg(null);
               }}
-              className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-                authMode === "register"
+              className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${authMode === "register"
                   ? "bg-base-100 text-primary shadow-sm font-black"
                   : "text-base-content/60 hover:text-base-content"
-              }`}
+                }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-warning" />
               <span>Register Kitchen</span>
@@ -146,11 +158,10 @@ function VendorLoginContent() {
                 setAuthMode("login");
                 setErrorMsg(null);
               }}
-              className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-                authMode === "login"
+              className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${authMode === "login"
                   ? "bg-base-100 text-primary shadow-sm font-black"
                   : "text-base-content/60 hover:text-base-content"
-              }`}
+                }`}
             >
               <Store className="w-3.5 h-3.5" />
               <span>Vendor Log In</span>
@@ -244,7 +255,7 @@ function VendorLoginContent() {
                       </div>
                     </div>
 
-                    {/* State & City Area Grid */}
+                    {/* State & City Area Grid from Database */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="form-control">
                         <label className="label py-1">
@@ -255,39 +266,40 @@ function VendorLoginContent() {
                         <select
                           name="state"
                           value={state}
-                          onChange={(e) => setState(e.target.value)}
+                          onChange={(e) => {
+                            setState(e.target.value);
+                            setCityArea("");
+                          }}
                           className="select select-bordered select-md w-full focus:select-primary text-sm rounded-xl font-medium"
                         >
-                          {[
-                            "Lagos",
-                            "Abuja (FCT)",
-                            "Rivers",
-                            "Oyo",
-                            "Ogun",
-                            "Kano",
-                            "Enugu",
-                            "Delta",
-                            "Edo",
-                            "Kaduna",
-                            "Anambra",
-                            "Akwa Ibom",
-                            "Ondo",
-                            "Osun",
-                            "Kwara",
-                            "Plateau",
-                            "Cross River",
-                          ].map((st) => (
-                            <option key={st} value={st}>
-                              {st}
-                            </option>
-                          ))}
+                          {dbLocations.length > 0
+                            ? dbLocations.map((st) => (
+                              <option key={st.id} value={st.name}>
+                                {st.name}
+                              </option>
+                            ))
+                            : [
+                              "Lagos",
+                              "Abuja (FCT)",
+                              "Rivers",
+                              "Delta",
+                              "Edo",
+                              "Ogun",
+                              "Oyo",
+                              "Kano",
+                              "Enugu",
+                            ].map((st) => (
+                              <option key={st} value={st}>
+                                {st}
+                              </option>
+                            ))}
                         </select>
                       </div>
 
                       <div className="form-control">
                         <label className="label py-1">
                           <span className="label-text font-bold text-xs text-base-content/80">
-                            Area / Neighborhood *
+                            Area / Neighborhood in {state} *
                           </span>
                         </label>
                         <div className="relative">
@@ -296,11 +308,18 @@ function VendorLoginContent() {
                             type="text"
                             name="city_area"
                             required
+                            list="cities-datalist"
                             value={cityArea}
                             onChange={(e) => setCityArea(e.target.value)}
-                            placeholder="e.g. Yaba, Ikeja, Ipaja"
+                            placeholder={`e.g. ${dbLocations.find((l) => l.name === state)?.cities?.[0]?.name || "Ikeja, Yaba, Ipaja"
+                              }`}
                             className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
                           />
+                          <datalist id="cities-datalist">
+                            {(dbLocations.find((l) => l.name === state)?.cities || []).map((city: any) => (
+                              <option key={city.id} value={city.name} />
+                            ))}
+                          </datalist>
                         </div>
                       </div>
                     </div>
@@ -353,7 +372,7 @@ function VendorLoginContent() {
                 </button>
 
                 <p className="text-[11px] text-base-content/50 text-center">
-                  🔒 Passwordless login with Supabase OTP email verification
+                  🔒 Passwordless login with OTP email verification
                 </p>
 
                 {/* Footer Switcher */}

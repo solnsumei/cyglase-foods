@@ -171,6 +171,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"states": {
+                  Row: {
+                    "created_at": string,"display_order": number,"id": string,"is_active": boolean,"name": string,"code": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"display_order"?: number,"id"?: string,"is_active"?: boolean,"name": string,"code": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"display_order"?: number,"id"?: string,"is_active"?: boolean,"name"?: string,"code"?: string,"updated_at"?: string
+                  }
+                  Relationships: []
+                },"cities": {
+                  Row: {
+                    "created_at": string,"display_order": number,"id": string,"is_active": boolean,"name": string,"state_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"display_order"?: number,"id"?: string,"is_active"?: boolean,"name": string,"state_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"display_order"?: number,"id"?: string,"is_active"?: boolean,"name"?: string,"state_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+                      foreignKeyName: "cities_state_id_fkey"
+                      columns: ["state_id"]
+                      isOneToOne: false
+                      referencedRelation: "states"
+                      referencedColumns: ["id"]
+                    }
+                  ]
                 }
           }
           Views: {

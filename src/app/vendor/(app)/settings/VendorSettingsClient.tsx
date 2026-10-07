@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Store,
   Clock,
@@ -17,11 +17,12 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { updateVendorSettings } from "../../actions";
+import { updateVendorSettings, getDbLocations } from "../../actions";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import ConfirmModal from "@/components/ConfirmModal";
 import type { Database } from "@/types/database.types";
+import type { StateRow } from "@/lib/locations";
 
 type Vendor = Database["public"]["Tables"]["vendors"]["Row"];
 
@@ -42,28 +43,16 @@ const NIGERIAN_BANKS = [
   "Other Bank",
 ];
 
-const LAGOS_AREAS = [
-  "Lekki Phase 1",
-  "Victoria Island",
-  "Ikoyi",
-  "Ajah",
-  "Chevron / Igbo Efon",
-  "Yaba",
-  "Surulere",
-  "Ikeja",
-  "Magodo",
-  "Maryland",
-  "Gbagada",
-  "Festac",
-  "Ogba",
-  "Agege",
-  "Alimosho",
-  "Ikorodu",
-  "Other Area",
-];
-
-export default function VendorSettingsClient({ vendor }: { vendor: Vendor }) {
+export default function VendorSettingsClient({
+  vendor,
+  locationStates = [],
+}: {
+  vendor: Vendor;
+  locationStates?: StateRow[];
+}) {
   const router = useRouter();
+  const [locations, setLocations] = useState<StateRow[]>(locationStates);
+
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -80,6 +69,23 @@ export default function VendorSettingsClient({ vendor }: { vendor: Vendor }) {
   const [cityArea, setCityArea] = useState(vendor.city_area || "");
   const [address, setAddress] = useState(vendor.address || "");
   const [landmark, setLandmark] = useState(vendor.landmark || "");
+
+  // Load locations dynamically if not supplied via props
+  useEffect(() => {
+    if (locations.length === 0) {
+      getDbLocations().then((res) => {
+        if (res && res.length > 0) setLocations(res);
+      });
+    }
+  }, [locations.length]);
+
+  // Compute available cities for currently selected state
+  const currentCities = useMemo(() => {
+    const matched = locations.find(
+      (s) => s.name.toLowerCase() === (state || "").toLowerCase()
+    );
+    return matched?.cities || [];
+  }, [locations, state]);
 
   // Schedule
   const [openingTime, setOpeningTime] = useState(
@@ -314,7 +320,37 @@ export default function VendorSettingsClient({ vendor }: { vendor: Vendor }) {
           </div>
 
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="label text-xs font-bold text-base-content/80 pb-1">
+                  State
+                </label>
+                <select
+                  value={state}
+                  onChange={(e) => {
+                    const newState = e.target.value;
+                    setState(newState);
+                    const matched = locations.find(
+                      (s) => s.name.toLowerCase() === newState.toLowerCase()
+                    );
+                    if (matched && matched.cities && matched.cities.length > 0) {
+                      setCity(matched.name.split(" ")[0]);
+                    }
+                  }}
+                  className="select select-bordered w-full rounded-xl text-sm font-semibold"
+                >
+                  {locations.length > 0 ? (
+                    locations.map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {s.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value={state}>{state}</option>
+                  )}
+                </select>
+              </div>
+
               <div>
                 <label className="label text-xs font-bold text-base-content/80 pb-1">
                   City
@@ -323,7 +359,7 @@ export default function VendorSettingsClient({ vendor }: { vendor: Vendor }) {
                   type="text"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  placeholder="Lagos"
+                  placeholder="e.g. Lagos"
                   className="input input-bordered w-full rounded-xl text-sm"
                 />
               </div>
@@ -337,12 +373,12 @@ export default function VendorSettingsClient({ vendor }: { vendor: Vendor }) {
                   list="area-list"
                   value={cityArea}
                   onChange={(e) => setCityArea(e.target.value)}
-                  placeholder="e.g. Yaba"
+                  placeholder="e.g. Yaba or Ipaja"
                   className="input input-bordered w-full rounded-xl text-sm font-semibold"
                 />
                 <datalist id="area-list">
-                  {LAGOS_AREAS.map((a) => (
-                    <option key={a} value={a} />
+                  {currentCities.map((c) => (
+                    <option key={c.id} value={c.name} />
                   ))}
                 </datalist>
               </div>

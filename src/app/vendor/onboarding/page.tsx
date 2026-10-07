@@ -1,11 +1,22 @@
 "use client";
 
-import { useActionState } from "react";
-import { onboardVendor } from "../actions";
+import { useActionState, useState, useEffect } from "react";
+import { onboardVendor, getDbLocations } from "../actions";
 import { Store, MapPin, Phone, Sparkles } from "lucide-react";
 
 export default function VendorOnboardingPage() {
   const [state, formAction, isPending] = useActionState(onboardVendor, null);
+  const [selectedState, setSelectedState] = useState("Lagos");
+  const [selectedArea, setSelectedArea] = useState("");
+  const [dbLocations, setDbLocations] = useState<any[]>([]);
+
+  useEffect(() => {
+    getDbLocations().then((locs) => {
+      if (locs && locs.length > 0) {
+        setDbLocations(locs);
+      }
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-base-200 flex flex-col justify-center px-4 py-8 sm:px-6">
@@ -66,19 +77,38 @@ export default function VendorOnboardingPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="form-control">
                   <label className="label py-1">
-                    <span className="label-text font-bold text-xs">State</span>
+                    <span className="label-text font-bold text-xs">State *</span>
                   </label>
                   <select
                     name="state"
-                    defaultValue="Lagos"
+                    value={selectedState}
+                    onChange={(e) => {
+                      setSelectedState(e.target.value);
+                      setSelectedArea("");
+                    }}
                     className="select select-bordered select-md w-full text-xs font-semibold"
                   >
-                    <option value="Lagos">Lagos</option>
-                    <option value="Abuja FCT">Abuja FCT</option>
-                    <option value="Rivers">Rivers (Port Harcourt)</option>
-                    <option value="Oyo">Oyo (Ibadan)</option>
-                    <option value="Ogun">Ogun</option>
-                    <option value="Enugu">Enugu</option>
+                    {dbLocations.length > 0
+                      ? dbLocations.map((st) => (
+                          <option key={st.id} value={st.name}>
+                            {st.name}
+                          </option>
+                        ))
+                      : [
+                          "Lagos",
+                          "Abuja (FCT)",
+                          "Rivers",
+                          "Delta",
+                          "Edo",
+                          "Ogun",
+                          "Oyo",
+                          "Kano",
+                          "Enugu",
+                        ].map((st) => (
+                          <option key={st} value={st}>
+                            {st}
+                          </option>
+                        ))}
                   </select>
                 </div>
 
@@ -86,16 +116,26 @@ export default function VendorOnboardingPage() {
                   <label className="label py-1">
                     <span className="label-text font-bold text-xs flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-primary" />
-                      Area / Neighborhood *
+                      Area in {selectedState} *
                     </span>
                   </label>
                   <input
                     type="text"
                     name="city_area"
                     required
-                    placeholder="e.g. Ikeja, Lekki, Yaba"
+                    list="onboarding-cities-datalist"
+                    value={selectedArea}
+                    onChange={(e) => setSelectedArea(e.target.value)}
+                    placeholder={`e.g. ${
+                      dbLocations.find((l) => l.name === selectedState)?.cities?.[0]?.name || "Ikeja, Yaba"
+                    }`}
                     className="input input-bordered input-md w-full focus:input-primary text-xs font-medium"
                   />
+                  <datalist id="onboarding-cities-datalist">
+                    {(dbLocations.find((l) => l.name === selectedState)?.cities || []).map((c: any) => (
+                      <option key={c.id} value={c.name} />
+                    ))}
+                  </datalist>
                 </div>
               </div>
 
