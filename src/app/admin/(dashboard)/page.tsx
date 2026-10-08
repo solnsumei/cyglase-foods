@@ -3,40 +3,63 @@ import Link from "next/link";
 import {
   Layers,
   Store,
-  UtensilsCrossed,
-  ShoppingBag,
+  CheckCircle2,
   Clock,
   ArrowRight,
   TrendingUp,
+  BarChart3,
+  XCircle,
+  Truck,
+  AlertCircle,
 } from "lucide-react";
 
 export default async function AdminDashboardPage() {
   const adminClient = createAdminClient();
 
-  // Fetch counts concurrently
+  // Fetch aggregate counts and status summaries
   const [
     { count: categoriesCount },
     { count: vendorsCount },
-    { count: menuItemsCount },
     { count: ordersCount },
-    { data: recentOrders },
+    { count: fulfilledOrdersCount },
+    { data: orderStatuses },
     { data: activeCategories },
   ] = await Promise.all([
     adminClient.from("categories").select("*", { count: "exact", head: true }),
     adminClient.from("vendors").select("*", { count: "exact", head: true }),
-    adminClient.from("menu_items").select("*", { count: "exact", head: true }),
     adminClient.from("orders").select("*", { count: "exact", head: true }),
     adminClient
       .from("orders")
-      .select("id, total_amount, status, created_at, delivery_city, contact_phone")
-      .order("created_at", { ascending: false })
-      .limit(5),
+      .select("*", { count: "exact", head: true })
+      .eq("status", "delivered"),
+    adminClient.from("orders").select("status"),
     adminClient
       .from("categories")
       .select("id, name, slug, is_active, display_order")
       .order("display_order", { ascending: true })
       .limit(7),
   ]);
+
+  const total = ordersCount || 0;
+  const fulfilled = fulfilledOrdersCount || 0;
+  const fulfillmentRate = total > 0 ? ((fulfilled / total) * 100).toFixed(1) : "0.0";
+
+  let inProgress = 0; // preparing, out_for_delivery
+  let pending = 0; // pending_acceptance, awaiting_payment, payment_uploaded
+  let cancelled = 0; // cancelled, rejected
+
+  if (orderStatuses) {
+    orderStatuses.forEach((o) => {
+      const s = o.status;
+      if (s === "preparing" || s === "out_for_delivery") {
+        inProgress++;
+      } else if (s === "cancelled" || s === "rejected") {
+        cancelled++;
+      } else if (s !== "delivered") {
+        pending++;
+      }
+    });
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -50,7 +73,7 @@ export default async function AdminDashboardPage() {
             Cyglase Foods Management
           </h1>
           <p className="text-primary-content/80 text-sm mt-1">
-            Real-time catalog control, vendor management, and order transaction oversight.
+            Platform catalog control, vendor directory, and high-level fulfillment tracking.
           </p>
         </div>
 
@@ -60,14 +83,15 @@ export default async function AdminDashboardPage() {
             Manage Categories
           </Link>
           <Link href="/admin/orders" className="btn btn-neutral btn-sm font-bold">
-            <ShoppingBag className="w-4 h-4" />
-            View Orders
+            <BarChart3 className="w-4 h-4" />
+            Order Analytics
           </Link>
         </div>
       </div>
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Categories */}
         <div className="stat bg-base-100 rounded-2xl border border-base-300 shadow-xs">
           <div className="stat-figure text-primary">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -83,6 +107,7 @@ export default async function AdminDashboardPage() {
           <div className="stat-desc text-xs mt-1">Seeded food groups</div>
         </div>
 
+        {/* Vendors */}
         <div className="stat bg-base-100 rounded-2xl border border-base-300 shadow-xs">
           <div className="stat-figure text-primary">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -95,24 +120,28 @@ export default async function AdminDashboardPage() {
           <div className="stat-value text-2xl font-black text-primary">
             {vendorsCount || 0}
           </div>
-          <div className="stat-desc text-xs mt-1">Food kitchens & sellers</div>
+          <div className="stat-desc text-xs mt-1">Active kitchens & sellers</div>
         </div>
 
+        {/* Fulfilled Orders */}
         <div className="stat bg-base-100 rounded-2xl border border-base-300 shadow-xs">
-          <div className="stat-figure text-secondary">
-            <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
-              <UtensilsCrossed className="w-5 h-5 text-secondary" />
+          <div className="stat-figure text-success">
+            <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+              <CheckCircle2 className="w-5 h-5 text-success" />
             </div>
           </div>
-          <div className="stat-title text-xs font-semibold uppercase text-base-content/60">
-            Menu Items
+          <div className="stat-title text-xs font-semibold uppercase text-success">
+            Fulfilled Orders
           </div>
-          <div className="stat-value text-2xl font-black text-secondary">
-            {menuItemsCount || 0}
+          <div className="stat-value text-2xl font-black text-success">
+            {fulfilled}
           </div>
-          <div className="stat-desc text-xs mt-1">Dishes & accompaniments</div>
+          <div className="stat-desc text-xs mt-1 font-semibold text-success">
+            {fulfillmentRate}% completion rate
+          </div>
         </div>
 
+        {/* Total Orders */}
         <div className="stat bg-base-100 rounded-2xl border border-base-300 shadow-xs">
           <div className="stat-figure text-accent">
             <div className="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center">
@@ -123,13 +152,13 @@ export default async function AdminDashboardPage() {
             Total Orders
           </div>
           <div className="stat-value text-2xl font-black text-accent-content">
-            {ordersCount || 0}
+            {total}
           </div>
-          <div className="stat-desc text-xs mt-1">Customer orders placed</div>
+          <div className="stat-desc text-xs mt-1">Platform customer orders</div>
         </div>
       </div>
 
-      {/* Grid: Categories & Recent Orders */}
+      {/* Grid: Categories & Order Fulfillment Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Categories Card */}
         <div className="card bg-base-100 border border-base-300 shadow-xs lg:col-span-1">
@@ -182,85 +211,100 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Recent Orders Card */}
+        {/* Order Fulfillment & Volume Summary */}
         <div className="card bg-base-100 border border-base-300 shadow-xs lg:col-span-2">
           <div className="card-body p-5">
             <div className="flex items-center justify-between mb-2">
               <h2 className="card-title text-base font-bold flex items-center gap-2">
-                <ShoppingBag className="w-4 h-4 text-primary" />
-                Recent Orders
+                <BarChart3 className="w-4 h-4 text-primary" />
+                Order Fulfillment Overview
               </h2>
               <Link
                 href="/admin/orders"
                 className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"
               >
-                All Orders <ArrowRight className="w-3 h-3" />
+                Detailed Analytics <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 
-            <p className="text-xs text-base-content/60 mb-3">
-              Latest transactions requiring vendor verification or dispatch:
+            <p className="text-xs text-base-content/60 mb-4">
+              Real-time delivery fulfillment breakdown across all vendor kitchens:
             </p>
 
-            {recentOrders && recentOrders.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="table table-sm w-full text-xs">
-                  <thead>
-                    <tr>
-                      <th>Order ID</th>
-                      <th>Amount</th>
-                      <th>Location</th>
-                      <th>Status</th>
-                      <th>Placed</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentOrders.map((o) => (
-                      <tr key={o.id}>
-                        <td className="font-mono text-[11px] font-bold">
-                          #{o.id.slice(0, 8)}
-                        </td>
-                        <td className="font-bold">₦{Number(o.total_amount).toLocaleString()}</td>
-                        <td>{o.delivery_city}</td>
-                        <td>
-                          <span
-                            className={`badge badge-xs font-semibold ${
-                              o.status === "delivered"
-                                ? "badge-success"
-                                : o.status === "cancelled"
-                                ? "badge-error"
-                                : o.status === "payment_uploaded"
-                                ? "badge-warning"
-                                : "badge-info"
-                            }`}
-                          >
-                            {o.status.replace("_", " ")}
-                          </span>
-                        </td>
-                        <td className="text-base-content/60">
-                          {new Date(o.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* Progress Bar */}
+            <div className="p-4 rounded-2xl bg-base-200/60 border border-base-200 mb-4">
+              <div className="flex items-center justify-between text-xs mb-1.5 font-bold">
+                <span className="text-base-content/70">Overall Completion</span>
+                <span className="text-success">{fulfillmentRate}% Fulfilled ({fulfilled}/{total})</span>
               </div>
-            ) : (
-              <div className="py-12 flex flex-col items-center justify-center text-center">
-                <div className="w-12 h-12 rounded-full bg-base-200 flex items-center justify-center text-base-content/40 mb-2">
-                  <Clock className="w-6 h-6" />
+              <div className="w-full bg-base-300 rounded-full h-3 overflow-hidden flex">
+                <div
+                  className="bg-success transition-all duration-500"
+                  style={{ width: `${fulfillmentRate}%` }}
+                ></div>
+                <div
+                  className="bg-primary/70 transition-all duration-500"
+                  style={{
+                    width: total > 0 ? `${(inProgress / total) * 100}%` : "0%",
+                  }}
+                ></div>
+                <div
+                  className="bg-warning/70 transition-all duration-500"
+                  style={{
+                    width: total > 0 ? `${(pending / total) * 100}%` : "0%",
+                  }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Status Breakdown Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-success/10 border border-success/20">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-success">Fulfilled</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-success" />
                 </div>
-                <p className="text-sm font-semibold text-base-content/70">
-                  No orders placed yet
-                </p>
-                <p className="text-xs text-base-content/50 max-w-xs mt-1">
-                  When customers make orders through vendor storefronts, they will appear here in real-time.
-                </p>
+                <div className="text-xl font-black text-success mt-1">{fulfilled}</div>
+                <span className="text-[10px] text-base-content/60">Delivered</span>
               </div>
-            )}
+
+              <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-primary">In Kitchen</span>
+                  <Truck className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <div className="text-xl font-black text-primary mt-1">{inProgress}</div>
+                <span className="text-[10px] text-base-content/60">Cooking/Transit</span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-warning/10 border border-warning/20">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-warning-content">Pending</span>
+                  <AlertCircle className="w-3.5 h-3.5 text-warning-content" />
+                </div>
+                <div className="text-xl font-black text-warning-content mt-1">{pending}</div>
+                <span className="text-[10px] text-base-content/60">Action Needed</span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-error/10 border border-error/20">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-error">Cancelled</span>
+                  <XCircle className="w-3.5 h-3.5 text-error" />
+                </div>
+                <div className="text-xl font-black text-error mt-1">{cancelled}</div>
+                <span className="text-[10px] text-base-content/60">Aborted</span>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-base-200 flex justify-end">
+              <Link
+                href="/admin/orders"
+                className="btn btn-sm btn-ghost text-primary text-xs font-bold gap-1.5"
+              >
+                <span>View Store & City Breakdown</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>

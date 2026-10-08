@@ -124,7 +124,7 @@ export default async function CustomerOrdersPage() {
           <div className="space-y-3">
             {orders.map((order) => {
               const statusLabels: Record<string, { label: string; color: string }> = {
-                pending_acceptance: { label: "Waiting for Kitchen", color: "badge-warning" },
+                pending_acceptance: { label: "Waiting for Kitchen", color: "badge-warning text-white font-black" },
                 awaiting_payment: { label: "Transfer & Receipt Needed", color: "badge-secondary" },
                 payment_uploaded: { label: "Receipt Uploaded", color: "badge-primary" },
                 preparing: { label: "Cooking in Kitchen", color: "badge-success" },

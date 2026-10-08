@@ -9,11 +9,9 @@ import {
   Building2,
   CheckCircle2,
   XCircle,
-  Phone,
   Eye,
   EyeOff,
   Shield,
-  Lock,
 } from "lucide-react";
 import type { Database } from "@/types/database.types";
 
@@ -23,13 +21,6 @@ type Vendor = Database["public"]["Tables"]["vendors"]["Row"] & {
     full_name: string | null;
   } | null;
 };
-
-function maskPhoneNumber(phone: string): string {
-  if (!phone || phone.length < 7) return "••••••••";
-  const start = phone.slice(0, 4);
-  const end = phone.slice(-3);
-  return `${start} ••• ${end}`;
-}
 
 function maskAccountNumber(account: string): string {
   if (!account || account.length < 6) return "••••••••";
@@ -43,7 +34,6 @@ export default function VendorList({
 }) {
   const [vendors, setVendors] = useState(initialVendors);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  const [revealedPhone, setRevealedPhone] = useState(false);
   const [revealedAccount, setRevealedAccount] = useState(false);
 
   const handleToggle = async (vendor: Vendor) => {
@@ -61,7 +51,6 @@ export default function VendorList({
 
   const openInspector = (vendor: Vendor) => {
     setSelectedVendor(vendor);
-    setRevealedPhone(false);
     setRevealedAccount(false);
   };
 
@@ -81,7 +70,7 @@ export default function VendorList({
 
         <div className="badge badge-outline gap-1.5 text-xs py-3 text-base-content/70">
           <Shield className="w-3.5 h-3.5 text-primary" />
-          <span>NDPR Privacy Guard: Private PII Masked</span>
+          <span>Vendor Directory</span>
         </div>
       </div>
 
@@ -96,7 +85,7 @@ export default function VendorList({
                     <th>Storefront Name</th>
                     <th>Commercial Kitchen Area</th>
                     <th>Operating Hours</th>
-                    <th>Contact & Payout</th>
+                    <th>Payout Account</th>
                     <th className="text-center">Approval Status</th>
                     <th className="text-right">Actions</th>
                   </tr>
@@ -151,21 +140,15 @@ export default function VendorList({
                       </td>
 
                       <td>
-                        <div className="flex items-center gap-1.5 text-xs">
-                          <Phone className="w-3 h-3 text-base-content/40" />
-                          <span className="font-mono text-base-content/80">
-                            {v.is_phone_public ? v.phone : maskPhoneNumber(v.phone)}
-                          </span>
-                          {!v.is_phone_public && (
-                            <span className="badge badge-ghost text-[9px] py-0 px-1 font-medium">
-                              Private
+                        {v.bank_name && v.account_number ? (
+                          <div className="flex items-center gap-1.5 text-xs font-mono">
+                            <Building2 className="w-3.5 h-3.5 text-base-content/40 shrink-0" />
+                            <span className="truncate max-w-[170px]">
+                              {v.bank_name} • {maskAccountNumber(v.account_number)}
                             </span>
-                          )}
-                        </div>
-                        {v.bank_name && v.account_number && (
-                          <div className="text-[11px] text-base-content/50 font-mono mt-0.5">
-                            {v.bank_name} • {maskAccountNumber(v.account_number)}
                           </div>
+                        ) : (
+                          <span className="text-base-content/40 text-xs italic">Not configured</span>
                         )}
                       </td>
 
@@ -263,45 +246,7 @@ export default function VendorList({
                 )}
               </div>
 
-              {/* Contact with Privacy Unmasking for Support Escalation */}
-              <div className="p-3 rounded-xl bg-base-200/60 border border-base-300/40">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold uppercase tracking-wider text-base-content/50 text-[10px] flex items-center gap-1">
-                    <Lock className="w-3 h-3 text-base-content/50" />
-                    Vendor Contact (Support Only)
-                  </span>
-                  {!selectedVendor.is_phone_public && (
-                    <button
-                      onClick={() => setRevealedPhone(!revealedPhone)}
-                      className="btn btn-ghost btn-xs text-primary font-semibold gap-1 text-[11px]"
-                    >
-                      {revealedPhone ? (
-                        <>
-                          <EyeOff className="w-3 h-3" /> Hide
-                        </>
-                      ) : (
-                        <>
-                          <Eye className="w-3 h-3" /> Unmask for Support
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
 
-                <div className="mt-2 font-mono text-sm font-bold flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 text-primary" />
-                  <span>
-                    {selectedVendor.is_phone_public || revealedPhone
-                      ? selectedVendor.phone
-                      : maskPhoneNumber(selectedVendor.phone)}
-                  </span>
-                  {!selectedVendor.is_phone_public && !revealedPhone && (
-                    <span className="badge badge-ghost badge-xs text-[10px]">
-                      Protected
-                    </span>
-                  )}
-                </div>
-              </div>
 
               {/* Payout Banking Information */}
               <div className="p-3 rounded-xl bg-base-200/60 border border-base-300/40">

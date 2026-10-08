@@ -3,10 +3,10 @@ import Link from "next/link";
 import { logoutAdmin } from "../actions";
 import {
   LayoutDashboard,
-  UtensilsCrossed,
+  ChefHat,
   Store,
   Layers,
-  ShoppingBag,
+  BarChart3,
   Sliders,
   LogOut,
   Menu,
@@ -99,7 +99,7 @@ export default async function AdminDashboardLayout({
         </header>
 
         {/* Main Dashboard Content */}
-        <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 w-full max-w-7xl">
           {children}
         </main>
       </div>
@@ -116,8 +116,8 @@ export default async function AdminDashboardLayout({
             {/* Cyglase Brand Header */}
             <div className="p-5 border-b border-base-200">
               <Link href="/admin" className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-content font-bold shadow-md shadow-primary/20">
-                  <UtensilsCrossed className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-2xl bg-primary text-white flex items-center justify-center font-black shadow-md shadow-primary/20 shrink-0">
+                  <ChefHat className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="font-black text-lg tracking-tight leading-none">
@@ -159,13 +159,6 @@ export default async function AdminDashboardLayout({
               </li>
 
               <li>
-                <Link href="/admin/menu-items" className="flex items-center gap-3 py-2.5">
-                  <UtensilsCrossed className="w-4 h-4 text-primary" />
-                  Menu Items
-                </Link>
-              </li>
-
-              <li>
                 <Link href="/admin/locations" className="flex items-center gap-3 py-2.5">
                   <MapPin className="w-4 h-4 text-primary" />
                   Locations & Areas
@@ -173,13 +166,13 @@ export default async function AdminDashboardLayout({
               </li>
 
               <li className="menu-title text-xs uppercase tracking-wider text-base-content/50 mt-4 mb-1">
-                Sales & System
+                Sales & Analytics
               </li>
 
               <li>
                 <Link href="/admin/orders" className="flex items-center gap-3 py-2.5">
-                  <ShoppingBag className="w-4 h-4 text-primary" />
-                  Orders & Proofs
+                  <BarChart3 className="w-4 h-4 text-primary" />
+                  Order Analytics
                 </Link>
               </li>
 

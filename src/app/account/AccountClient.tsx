@@ -178,7 +178,7 @@ export default function AccountClient({
             <button
               onClick={handleSignOut}
               disabled={isSigningOut}
-              className="btn btn-ghost btn-sm text-error hover:bg-error/10 rounded-2xl gap-1.5 self-center sm:self-start"
+              className="hidden sm:inline-flex btn btn-ghost btn-sm text-error hover:bg-error/10 rounded-2xl gap-1.5 self-start"
             >
               <LogOut className="w-4 h-4" />
               <span>{isSigningOut ? "Signing out..." : "Sign Out"}</span>
@@ -383,6 +383,18 @@ export default function AccountClient({
               </button>
             </div>
           </form>
+        </div>
+
+        {/* Mobile Customer Sign Out at the bottom */}
+        <div className="sm:hidden pt-2 pb-6">
+          <button
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+            className="btn btn-ghost btn-sm text-error hover:bg-error/10 rounded-2xl gap-2 w-full border border-error/20 py-2.5 font-bold"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>{isSigningOut ? "Signing out..." : "Sign Out of Account"}</span>
+          </button>
         </div>
       </main>
 

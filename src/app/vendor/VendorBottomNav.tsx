@@ -2,18 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingBag, UtensilsCrossed, Sliders, Store } from "lucide-react";
+import { ShoppingBag, UtensilsCrossed, BarChart3, Sliders } from "lucide-react";
 
 export default function VendorBottomNav({ storeSlug }: { storeSlug?: string }) {
   const pathname = usePathname();
 
   const isOrders = pathname === "/vendor";
   const isMenu = pathname.startsWith("/vendor/menu");
+  const isSales = pathname.startsWith("/vendor/sales");
   const isSettings = pathname.startsWith("/vendor/settings");
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-base-100/95 backdrop-blur-md border-t border-base-200 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] md:hidden">
-      <div className={`grid ${storeSlug ? "grid-cols-4" : "grid-cols-3"} h-16 items-center px-1 max-w-md mx-auto`}>
+      <div className="grid grid-cols-4 h-16 items-center px-1 max-w-md mx-auto">
         {/* Orders */}
         <Link
           href="/vendor"
@@ -37,20 +38,21 @@ export default function VendorBottomNav({ storeSlug }: { storeSlug?: string }) {
           }`}
         >
           <UtensilsCrossed className={`w-5 h-5 ${isMenu ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
-          <span className="text-[10px] tracking-tight">My Menu</span>
+          <span className="text-[10px] tracking-tight">Menu</span>
         </Link>
 
-        {/* Public Storefront Link */}
-        {storeSlug && (
-          <Link
-            href={`/store/${storeSlug}`}
-            target="_blank"
-            className="flex flex-col items-center justify-center gap-1 py-1 text-base-content/60 hover:text-primary transition-colors"
-          >
-            <Store className="w-5 h-5 stroke-[1.8]" />
-            <span className="text-[10px] tracking-tight">Storefront</span>
-          </Link>
-        )}
+        {/* Sales Report */}
+        <Link
+          href="/vendor/sales"
+          className={`flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition-colors ${
+            isSales
+              ? "text-primary font-black"
+              : "text-base-content/60 hover:text-base-content"
+          }`}
+        >
+          <BarChart3 className={`w-5 h-5 ${isSales ? "stroke-[2.5]" : "stroke-[1.8]"}`} />
+          <span className="text-[10px] tracking-tight">Sales</span>
+        </Link>
 
         {/* Settings */}
         <Link

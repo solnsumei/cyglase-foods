@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   UtensilsCrossed,
   Plus,
@@ -13,6 +13,7 @@ import {
   Loader2,
   DollarSign,
   Tag,
+  ChevronLeft,
   ChevronRight,
   Filter,
 } from "lucide-react";
@@ -40,6 +41,8 @@ export default function VendorMenuClient({
   const [items, setItems] = useState<MenuItem[]>(initialItems);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,6 +71,12 @@ export default function VendorMenuClient({
     return matchesCategory && matchesSearch;
   });
 
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE) || 1;
+  const paginatedItems = filteredItems.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   const openAddModal = () => {
     setEditingItem(null);
     setFormName("");
@@ -78,6 +87,15 @@ export default function VendorMenuClient({
     setActionError(null);
     setIsModalOpen(true);
   };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("action") === "add") {
+        openAddModal();
+      }
+    }
+  }, []);
 
   const openEditModal = (item: MenuItem) => {
     setEditingItem(item);
@@ -191,8 +209,8 @@ export default function VendorMenuClient({
       {/* Top Banner & Quick Add */}
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-base-content flex items-center gap-2">
-            <UtensilsCrossed className="w-6 h-6 text-primary" />
+          <h1 className="text-xl font-bold tracking-tight text-base-content flex items-center gap-2">
+            <UtensilsCrossed className="w-5 h-5 text-primary" />
             Kitchen Menu
           </h1>
           <p className="text-xs sm:text-sm text-base-content/60">
@@ -215,13 +233,19 @@ export default function VendorMenuClient({
         <input
           type="text"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
           placeholder="Search your menu dishes..."
           className="input input-bordered w-full pl-10 text-sm rounded-xl bg-base-100 shadow-sm"
         />
         {searchQuery && (
           <button
-            onClick={() => setSearchQuery("")}
+            onClick={() => {
+              setSearchQuery("");
+              setCurrentPage(1);
+            }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-base-content/50 hover:text-base-content"
           >
             Clear
@@ -232,7 +256,10 @@ export default function VendorMenuClient({
       {/* Category Pills Slider - Scrollable on mobile */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1.5 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
         <button
-          onClick={() => setSelectedCategory("all")}
+          onClick={() => {
+            setSelectedCategory("all");
+            setCurrentPage(1);
+          }}
           className={`btn btn-xs sm:btn-sm rounded-full whitespace-nowrap px-3.5 font-medium transition-all ${
             selectedCategory === "all"
               ? "btn-primary text-white shadow-sm"
@@ -246,7 +273,10 @@ export default function VendorMenuClient({
           return (
             <button
               key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
+              onClick={() => {
+                setSelectedCategory(cat.id);
+                setCurrentPage(1);
+              }}
               className={`btn btn-xs sm:btn-sm rounded-full whitespace-nowrap px-3.5 font-medium transition-all ${
                 selectedCategory === cat.id
                   ? "btn-primary text-white shadow-sm"
@@ -283,8 +313,8 @@ export default function VendorMenuClient({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3">
-          {filteredItems.map((item) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {paginatedItems.map((item) => {
             const isToggling = togglingId === item.id;
             const isDeleting = deletingId === item.id;
 
@@ -375,6 +405,47 @@ export default function VendorMenuClient({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+          <p className="text-xs text-base-content/60">
+            Showing{" "}
+            <span className="font-semibold text-base-content">
+              {(currentPage - 1) * ITEMS_PER_PAGE + 1}
+            </span>{" "}
+            to{" "}
+            <span className="font-semibold text-base-content">
+              {Math.min(currentPage * ITEMS_PER_PAGE, filteredItems.length)}
+            </span>{" "}
+            of{" "}
+            <span className="font-semibold text-base-content">
+              {filteredItems.length}
+            </span>{" "}
+            dishes
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="btn btn-sm btn-outline border-base-300 rounded-xl gap-1 text-xs"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> Previous
+            </button>
+            <span className="text-xs font-semibold px-2">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="btn btn-sm btn-outline border-base-300 rounded-xl gap-1 text-xs"
+            >
+              Next <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 

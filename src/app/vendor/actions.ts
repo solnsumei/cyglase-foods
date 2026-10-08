@@ -415,11 +415,32 @@ export async function updateVendorSettings(formData: FormData) {
   const account_number = (formData.get("account_number") as string)?.trim() || null;
   const account_name = (formData.get("account_name") as string)?.trim() || null;
 
+  const rawSlug = (formData.get("slug") as string)?.trim().toLowerCase() || "";
+  const slug = rawSlug.replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+
   const adminClient = createAdminClient();
+
+  if (slug) {
+    if (slug.length < 3) {
+      return { error: "Store slug must be at least 3 characters long." };
+    }
+    const { data: existingVendor } = await adminClient
+      .from("vendors")
+      .select("id")
+      .eq("slug", slug)
+      .neq("id", vendor_id)
+      .maybeSingle();
+
+    if (existingVendor) {
+      return { error: "The store slug has already been taken, please choose a different one." };
+    }
+  }
+
   const { error } = await adminClient
     .from("vendors")
     .update({
       business_name,
+      ...(slug ? { slug } : {}),
       phone,
       is_phone_public,
       state,
@@ -442,6 +463,9 @@ export async function updateVendorSettings(formData: FormData) {
     await ensureCityExists(state, city_area);
   }
 
+  if (slug) {
+    revalidatePath(`/store/${slug}`);
+  }
   revalidatePath("/vendor/settings");
   revalidatePath("/vendor");
   return { success: true };

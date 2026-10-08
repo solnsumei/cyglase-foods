@@ -13,6 +13,7 @@ import {
   ShoppingBag,
   Flame,
   ChefHat,
+  ChevronLeft,
   ChevronRight,
   CheckCircle2,
   X,
@@ -124,6 +125,16 @@ export default function HomeClient({
   );
   const [activeSlide, setActiveSlide] = useState(0);
 
+  // Pagination State for Search Results & Home Dishes
+  const SEARCH_DISHES_PER_PAGE = 12;
+  const [searchPage, setSearchPage] = useState(1);
+  const [homeDishesCount, setHomeDishesCount] = useState(12);
+
+  // Reset search page whenever filters change
+  useEffect(() => {
+    setSearchPage(1);
+  }, [query, selectedCategory, selectedState, selectedArea, openOnly, priceRange, sortBy]);
+
   // Listen for hash #search or ?focus=search to auto-focus
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -226,6 +237,14 @@ export default function HomeClient({
     priceRange,
     sortBy,
   ]);
+
+  const totalSearchPages = Math.ceil(filteredDishes.length / SEARCH_DISHES_PER_PAGE) || 1;
+  const paginatedSearchDishes = useMemo(() => {
+    return filteredDishes.slice(
+      (searchPage - 1) * SEARCH_DISHES_PER_PAGE,
+      searchPage * SEARCH_DISHES_PER_PAGE
+    );
+  }, [filteredDishes, searchPage]);
 
   // Filter Vendors
   const filteredVendors = useMemo(() => {
@@ -647,8 +666,9 @@ export default function HomeClient({
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredDishes.map((item) => (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {paginatedSearchDishes.map((item) => (
                     <div
                       key={item.id}
                       className="card bg-base-100 shadow-sm border border-base-200 rounded-2xl overflow-hidden hover:shadow-md hover:border-primary/40 transition-all flex flex-col justify-between"
@@ -712,7 +732,49 @@ export default function HomeClient({
                     </div>
                   ))}
                 </div>
-              )}
+
+                {/* Pagination Controls for Search Results */}
+                {totalSearchPages > 1 && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3">
+                    <p className="text-xs text-base-content/60">
+                      Showing{" "}
+                      <span className="font-semibold text-base-content">
+                        {(searchPage - 1) * SEARCH_DISHES_PER_PAGE + 1}
+                      </span>{" "}
+                      to{" "}
+                      <span className="font-semibold text-base-content">
+                        {Math.min(searchPage * SEARCH_DISHES_PER_PAGE, filteredDishes.length)}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-semibold text-base-content">
+                        {filteredDishes.length}
+                      </span>{" "}
+                      matching meals
+                    </p>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSearchPage((p) => Math.max(1, p - 1))}
+                        disabled={searchPage === 1}
+                        className="btn btn-sm btn-outline border-base-300 rounded-xl gap-1 text-xs"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" /> Previous
+                      </button>
+                      <span className="text-xs font-semibold px-2">
+                        Page {searchPage} of {totalSearchPages}
+                      </span>
+                      <button
+                        onClick={() => setSearchPage((p) => Math.min(totalSearchPages, p + 1))}
+                        disabled={searchPage === totalSearchPages}
+                        className="btn btn-sm btn-outline border-base-300 rounded-xl gap-1 text-xs"
+                      >
+                        Next <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
             </section>
 
             {/* Matched Kitchens */}
@@ -930,8 +992,9 @@ export default function HomeClient({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {initialItems.slice(0, 12).map((item) => (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {initialItems.slice(0, homeDishesCount).map((item) => (
                     <div
                       key={item.id}
                       className="card bg-base-100 shadow-sm border border-base-200 rounded-2xl overflow-hidden hover:shadow-md transition-all flex flex-col justify-between"
@@ -995,7 +1058,20 @@ export default function HomeClient({
                     </div>
                   ))}
                 </div>
-              )}
+
+                {initialItems.length > homeDishesCount && (
+                  <div className="text-center pt-2">
+                    <button
+                      onClick={() => setHomeDishesCount((prev) => prev + 12)}
+                      className="btn btn-outline border-base-300 btn-sm rounded-xl font-bold text-xs gap-1.5 hover:bg-base-200"
+                    >
+                      <UtensilsCrossed className="w-3.5 h-3.5 text-primary" />
+                      Load More Dishes ({initialItems.length - homeDishesCount} remaining)
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
             </section>
 
             {/* Vendor Registration CTA Banner */}

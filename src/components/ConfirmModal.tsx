@@ -34,9 +34,9 @@ export default function ConfirmModal({
       btnClass: "btn-error text-white",
     },
     warning: {
-      icon: <AlertTriangle className="w-6 h-6 text-warning" />,
-      bg: "bg-warning/10",
-      btnClass: "btn-warning text-black",
+      icon: <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />,
+      bg: "bg-amber-500/15 border border-amber-300 dark:border-amber-700",
+      btnClass: "btn-warning text-white font-black shadow-sm",
     },
     info: {
       icon: <Info className="w-6 h-6 text-primary" />,

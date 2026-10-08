@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   ChefHat,
   Home,
-  Search,
   Store,
   ShoppingBag,
   User,
@@ -33,7 +32,6 @@ export default function CustomerTopNav({
   }
 
   const isHome = pathname === "/";
-  const isSearch = pathname.startsWith("/search");
   const isOutlets = pathname.startsWith("/outlets");
   const isOrders = pathname.startsWith("/orders");
 
@@ -45,7 +43,6 @@ export default function CustomerTopNav({
 
   const navLinks = [
     { href: "/", label: "Home", icon: Home, active: isHome },
-    { href: "/#search", label: "Search", icon: Search, active: false },
     { href: "/outlets", label: "Outlets", icon: Store, active: isOutlets },
     { href: "/orders", label: "Orders", icon: ShoppingBag, active: isOrders },
   ];

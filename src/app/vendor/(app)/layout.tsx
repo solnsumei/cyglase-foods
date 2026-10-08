@@ -16,15 +16,18 @@ export default async function VendorAppLayout({
 
   return (
     <div className="min-h-screen bg-base-200/40 flex flex-col">
-      {/* Top Header with instant kitchen toggle */}
+      {/* Top Header with brand, desktop nav & instant kitchen actions */}
       <KitchenToggleHeader
         vendorId={vendor.id}
         businessName={vendor.business_name}
         initialIsOpen={vendor.is_open}
+        storeSlug={vendor.slug}
+        cityArea={vendor.city_area}
+        state={vendor.state}
       />
 
-      {/* Main Content with bottom padding to avoid overlapping the bottom nav on mobile */}
-      <main className="flex-1 max-w-2xl w-full mx-auto p-4 sm:p-6 pb-24">
+      {/* Main Content: Wide, responsive layout for desktop and clean mobile view */}
+      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-12">
         {children}
       </main>
 
