@@ -87,14 +87,14 @@ export default function CustomerTopNav({
           })}
         </div>
 
-        {/* Right Section: Sell Food & User Dropdown */}
+        {/* Right Section: Vendor & User Dropdown */}
         <div className="flex items-center gap-3 shrink-0">
           <Link
-            href="/vendor/login"
+            href={isVendor ? "/vendor" : "/vendor/login"}
             className="btn btn-ghost btn-sm text-xs font-bold text-secondary hover:bg-secondary/10 rounded-xl gap-1.5"
           >
             <Store className="w-3.5 h-3.5" />
-            <span>Sell Food</span>
+            <span>Vendor</span>
           </Link>
 
           {user ? (

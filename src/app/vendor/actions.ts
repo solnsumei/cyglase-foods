@@ -273,116 +273,134 @@ export async function toggleKitchenStatus(vendorId: string, currentState: boolea
 
 // 4. Menu Items Actions
 export async function toggleItemStock(itemId: string, currentState: boolean) {
-  const adminClient = createAdminClient();
-  const { error } = await adminClient
-    .from("menu_items")
-    .update({ is_available: !currentState })
-    .eq("id", itemId);
+  try {
+    const adminClient = createAdminClient();
+    const { error } = await adminClient
+      .from("menu_items")
+      .update({ is_available: !currentState })
+      .eq("id", itemId);
 
-  if (error) return { error: error.message };
-  revalidatePath("/vendor/menu");
-  return { success: true };
+    if (error) return { error: error.message };
+    revalidatePath("/vendor/menu");
+    return { success: true };
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "Failed to toggle stock status" };
+  }
 }
 
 export async function upsertMenuItem(formData: FormData) {
-  const id = formData.get("id") as string | null;
-  const vendor_id = formData.get("vendor_id") as string;
-  const category_id = formData.get("category_id") as string;
-  const name = (formData.get("name") as string)?.trim();
-  const description = (formData.get("description") as string)?.trim() || null;
-  const price = parseFloat(formData.get("price") as string) || 0;
-  const is_available = formData.get("is_available") === "true" || formData.get("is_available") === "on";
+  try {
+    const id = formData.get("id") as string | null;
+    const vendor_id = formData.get("vendor_id") as string;
+    const category_id = formData.get("category_id") as string;
+    const name = (formData.get("name") as string)?.trim();
+    const description = (formData.get("description") as string)?.trim() || null;
+    const price = parseFloat(formData.get("price") as string) || 0;
+    const is_available = formData.get("is_available") === "true" || formData.get("is_available") === "on";
 
-  const rawPrep = formData.get("preparation_time_minutes") as string | null;
-  const preparation_time_minutes =
-    rawPrep && !isNaN(parseInt(rawPrep, 10)) && parseInt(rawPrep, 10) > 0
-      ? parseInt(rawPrep, 10)
-      : null;
+    const rawPrep = formData.get("preparation_time_minutes") as string | null;
+    const preparation_time_minutes =
+      rawPrep && !isNaN(parseInt(rawPrep, 10)) && parseInt(rawPrep, 10) > 0
+        ? parseInt(rawPrep, 10)
+        : null;
 
-  let image_url = (formData.get("image_url") as string | null) || null;
-  const imageFile = formData.get("image_file") as File | null;
-  const removeImage = formData.get("remove_image") === "true";
+    let image_url = (formData.get("image_url") as string | null) || null;
+    const imageFile = formData.get("image_file") as File | null;
+    const removeImage = formData.get("remove_image") === "true";
 
-  if (removeImage) {
-    image_url = null;
-  }
-
-  if (!name || !category_id || price <= 0) {
-    return { error: "Please enter item name, category, and a valid price in Naira." };
-  }
-
-  const adminClient = createAdminClient();
-
-  // Handle image upload if a file was provided
-  if (imageFile && typeof imageFile === "object" && "size" in imageFile && imageFile.size > 0) {
-    if (imageFile.size > 10 * 1024 * 1024) {
-      return { error: "Dish image must be less than 10MB in size." };
+    if (removeImage) {
+      image_url = null;
     }
 
-    const fileExt = imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
-    const fileName = `dish_${vendor_id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
-    const arrayBuffer = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const { error: uploadError } = await adminClient.storage
-      .from("food-images")
-      .upload(fileName, buffer, {
-        contentType: imageFile.type || "image/jpeg",
-        upsert: true,
-      });
-
-    if (uploadError) {
-      console.error("Dish image upload error:", uploadError.message);
-      return { error: `Image upload failed: ${uploadError.message}` };
+    if (!name || !category_id || price <= 0) {
+      return { error: "Please enter item name, category, and a valid price in Naira." };
     }
 
-    const { data: urlData } = adminClient.storage
-      .from("food-images")
-      .getPublicUrl(fileName);
+    const adminClient = createAdminClient();
 
-    image_url = urlData.publicUrl;
+    // Handle image upload if a file was provided
+    if (imageFile && typeof imageFile === "object" && "size" in imageFile && imageFile.size > 0) {
+      if (imageFile.size > 10 * 1024 * 1024) {
+        return { error: "Dish image must be less than 10MB in size." };
+      }
+
+      const fileExt = imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const fileName = `dish_${vendor_id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      const arrayBuffer = await imageFile.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const { error: uploadError } = await adminClient.storage
+        .from("food-images")
+        .upload(fileName, buffer, {
+          contentType: imageFile.type || "image/jpeg",
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error("Dish image upload error:", uploadError.message);
+        return { error: `Image upload failed: ${uploadError.message}` };
+      }
+
+      const { data: urlData } = adminClient.storage
+        .from("food-images")
+        .getPublicUrl(fileName);
+
+      image_url = urlData.publicUrl;
+    }
+
+    if (id) {
+      const { error } = await adminClient
+        .from("menu_items")
+        .update({
+          name,
+          category_id,
+          description,
+          price,
+          is_available,
+          image_url,
+          preparation_time_minutes,
+        })
+        .eq("id", id);
+      if (error) return { error: error.message };
+    } else {
+      const { error } = await adminClient
+        .from("menu_items")
+        .insert({
+          vendor_id,
+          category_id,
+          name,
+          description,
+          price,
+          is_available,
+          image_url,
+          preparation_time_minutes,
+        });
+      if (error) return { error: error.message };
+    }
+
+    revalidatePath("/vendor/menu");
+    return { success: true, image_url };
+  } catch (err: unknown) {
+    console.error("upsertMenuItem fatal error:", err);
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred while saving the menu item.",
+    };
   }
-
-  if (id) {
-    const { error } = await adminClient
-      .from("menu_items")
-      .update({
-        name,
-        category_id,
-        description,
-        price,
-        is_available,
-        image_url,
-        preparation_time_minutes,
-      })
-      .eq("id", id);
-    if (error) return { error: error.message };
-  } else {
-    const { error } = await adminClient
-      .from("menu_items")
-      .insert({
-        vendor_id,
-        category_id,
-        name,
-        description,
-        price,
-        is_available,
-        image_url,
-        preparation_time_minutes,
-      });
-    if (error) return { error: error.message };
-  }
-
-  revalidatePath("/vendor/menu");
-  return { success: true };
 }
 
 export async function deleteMenuItem(itemId: string) {
-  const adminClient = createAdminClient();
-  const { error } = await adminClient.from("menu_items").delete().eq("id", itemId);
-  if (error) return { error: error.message };
-  revalidatePath("/vendor/menu");
-  return { success: true };
+  try {
+    const adminClient = createAdminClient();
+    const { error } = await adminClient.from("menu_items").delete().eq("id", itemId);
+    if (error) return { error: error.message };
+    revalidatePath("/vendor/menu");
+    return { success: true };
+  } catch (err: unknown) {
+    return { error: err instanceof Error ? err.message : "Failed to delete item" };
+  }
 }
 
 // 5. Order Management Actions

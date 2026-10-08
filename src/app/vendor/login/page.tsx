@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { sendVendorOtp, verifyVendorOtp, getDbLocations } from "../actions";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import OtpInput from "@/components/OtpInput";
 import {
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 
 function VendorLoginContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const modeParam = searchParams.get("mode") || searchParams.get("tab");
   const initialMode: "login" | "register" =
@@ -35,6 +37,22 @@ function VendorLoginContent() {
   const [otp, setOtp] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // If already logged in as a vendor, redirect to /vendor
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) {
+        const [{ data: vendor }, { data: profile }] = await Promise.all([
+          supabase.from("vendors").select("id").eq("user_id", user.id).maybeSingle(),
+          supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+        ]);
+        if (vendor || profile?.role === "vendor") {
+          router.replace("/vendor");
+        }
+      }
+    });
+  }, [router]);
 
   useEffect(() => {
     const mode = searchParams.get("mode") || searchParams.get("tab");

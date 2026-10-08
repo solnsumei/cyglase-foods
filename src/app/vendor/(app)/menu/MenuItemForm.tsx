@@ -18,6 +18,7 @@ import {
   Info,
 } from "lucide-react";
 import { upsertMenuItem, deleteMenuItem } from "../../actions";
+import { compressImage } from "@/lib/imageCompression";
 import ConfirmModal from "@/components/ConfirmModal";
 import type { Database } from "@/types/database.types";
 
@@ -73,25 +74,46 @@ export default function MenuItemForm({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      setErrorMsg("Image file is too large. Maximum size is 10MB.");
+    if (file.size > 15 * 1024 * 1024) {
+      setErrorMsg("Image file is too large. Maximum size is 15MB.");
       return;
     }
 
-    setSelectedFile(file);
-    setRemoveImage(false);
-    setErrorMsg(null);
+    try {
+      // Auto-compress and resize image before upload (shrinks 5MB-10MB down to ~150KB)
+      const compressed = await compressImage(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+        mimeType: "image/webp",
+      });
 
-    // Create local preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+      setSelectedFile(compressed);
+      setRemoveImage(false);
+      setErrorMsg(null);
+
+      // Create local preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(compressed);
+    } catch {
+      // Fallback to original file if compression fails
+      setSelectedFile(file);
+      setRemoveImage(false);
+      setErrorMsg(null);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleClearImage = () => {
@@ -388,7 +410,6 @@ export default function MenuItemForm({
                 type="number"
                 min="1"
                 max="180"
-                step="5"
                 value={prepTime}
                 onChange={(e) => setPrepTime(e.target.value)}
                 placeholder="e.g. 20"

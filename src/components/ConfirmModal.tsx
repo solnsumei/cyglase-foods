@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AlertTriangle, Info, CheckCircle2, X } from "lucide-react";
 
 interface Props {
@@ -25,6 +27,12 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
 }: Props) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   if (!isOpen) return null;
 
   const typeConfig = {
@@ -45,8 +53,8 @@ export default function ConfirmModal({
     },
   }[type];
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
       <div className="bg-base-100 max-w-sm w-full rounded-3xl shadow-2xl p-6 border border-base-200 animate-in zoom-in-95 duration-150">
         <div className="flex items-start gap-4">
           <div className={`w-12 h-12 rounded-2xl ${typeConfig.bg} flex items-center justify-center shrink-0`}>
@@ -83,4 +91,10 @@ export default function ConfirmModal({
       </div>
     </div>
   );
+
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(modalContent, document.body);
 }

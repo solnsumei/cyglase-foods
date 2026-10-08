@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type { Database, OrderStatus } from "@/types/database.types";
 import { uploadOrderReceipt } from "../../customer/actions";
+import { compressImage } from "@/lib/imageCompression";
 
 type Order = Database["public"]["Tables"]["orders"]["Row"] & {
   vendors?: Database["public"]["Tables"]["vendors"]["Row"] | null;
@@ -86,6 +87,21 @@ export default function OrderDetailClient({
     formData.append("order_id", order.id);
 
     try {
+      const file = (formData.get("receipt") as File) || null;
+      if (file && file.type.startsWith("image/")) {
+        try {
+          const compressed = await compressImage(file, {
+            maxWidth: 1400,
+            maxHeight: 1400,
+            quality: 0.8,
+            mimeType: "image/webp",
+          });
+          formData.set("receipt", compressed);
+        } catch {
+          // If compression fails, keep original receipt
+        }
+      }
+
       const res = await uploadOrderReceipt(formData);
       if (res?.error) {
         setUploadError(res.error);

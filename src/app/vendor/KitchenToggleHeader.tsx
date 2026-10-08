@@ -78,7 +78,8 @@ export default function KitchenToggleHeader({
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-base-100/95 backdrop-blur-md border-b border-base-200 shadow-xs">
+    <>
+      <header className="sticky top-0 z-40 bg-base-100/95 backdrop-blur-md border-b border-base-200 shadow-xs">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* Left: Brand & Kitchen Identity */}
         <div className="flex items-center gap-3 min-w-0">
@@ -234,29 +235,30 @@ export default function KitchenToggleHeader({
           </div>
         </div>
       </div>
-
-      {/* Sign Out Confirmation Modal */}
-      <ConfirmModal
-        isOpen={showSignOutConfirm}
-        title="Sign Out of Vendor Portal"
-        message="Are you sure you want to sign out of your kitchen dashboard?"
-        confirmText="Sign Out"
-        cancelText="Cancel"
-        type="danger"
-        onConfirm={handleSignOut}
-        onCancel={() => setShowSignOutConfirm(false)}
-      />
-
-      {/* In-app Error Modal */}
-      <ConfirmModal
-        isOpen={!!errorMsg}
-        title="Kitchen Status Error"
-        message={errorMsg || ""}
-        confirmText="Dismiss"
-        showCancel={false}
-        type="warning"
-        onConfirm={() => setErrorMsg(null)}
-      />
     </header>
+
+    {/* Sign Out Confirmation Modal */}
+    <ConfirmModal
+      isOpen={showSignOutConfirm}
+      title="Sign Out of Vendor Portal"
+      message="Are you sure you want to sign out of your kitchen dashboard?"
+      confirmText="Sign Out"
+      cancelText="Cancel"
+      type="danger"
+      onConfirm={handleSignOut}
+      onCancel={() => setShowSignOutConfirm(false)}
+    />
+
+    {/* In-app Error Modal */}
+    <ConfirmModal
+      isOpen={!!errorMsg}
+      title="Kitchen Status Error"
+      message={errorMsg || ""}
+      confirmText="Dismiss"
+      showCancel={false}
+      type="warning"
+      onConfirm={() => setErrorMsg(null)}
+    />
+    </>
   );
 }

@@ -37,7 +37,30 @@ export async function updateSession(request: NextRequest) {
 
   // Avoid writing logic between createServerClient and supabase.auth.getUser()
   // to avoid issues with user session refresh.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+
+  // If a vendor is logged in and visits /vendor/login or /login, redirect back to /vendor
+  if (user && (pathname === "/vendor/login" || pathname === "/login")) {
+    const [{ data: vendor }, { data: profile }] = await Promise.all([
+      supabase.from("vendors").select("id").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+    ]);
+
+    if (vendor || profile?.role === "vendor") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/vendor";
+      url.search = "";
+      const redirectResponse = NextResponse.redirect(url);
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+      });
+      return redirectResponse;
+    }
+  }
 
   return supabaseResponse;
 }

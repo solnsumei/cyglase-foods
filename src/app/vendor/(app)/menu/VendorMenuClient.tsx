@@ -20,6 +20,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { toggleItemStock, upsertMenuItem, deleteMenuItem } from "../../actions";
+import { compressImage } from "@/lib/imageCompression";
 import ConfirmModal from "@/components/ConfirmModal";
 import type { Database } from "@/types/database.types";
 
@@ -172,24 +173,45 @@ export default function VendorMenuClient({
     }
   };
 
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      setActionError("Image file is too large. Maximum size is 10MB.");
+    if (file.size > 15 * 1024 * 1024) {
+      setActionError("Image file is too large. Maximum size is 15MB.");
       return;
     }
 
-    setFormSelectedFile(file);
-    setFormRemoveImage(false);
-    setActionError(null);
+    try {
+      // Auto-compress and resize image before upload (shrinks 5MB-10MB down to ~150KB)
+      const compressed = await compressImage(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.8,
+        mimeType: "image/webp",
+      });
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+      setFormSelectedFile(compressed);
+      setFormRemoveImage(false);
+      setActionError(null);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(compressed);
+    } catch {
+      // Fallback to original file if compression fails
+      setFormSelectedFile(file);
+      setFormRemoveImage(false);
+      setActionError(null);
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleClearImage = () => {
@@ -248,7 +270,7 @@ export default function VendorMenuClient({
                   preparation_time_minutes: formPrepTime ? parseInt(formPrepTime, 10) : null,
                   image_url: formRemoveImage
                     ? null
-                    : formImagePreview || i.image_url,
+                    : res.image_url || formImagePreview || i.image_url,
                   categories: targetCat
                     ? { name: targetCat.name, slug: targetCat.slug }
                     : i.categories,
@@ -395,7 +417,7 @@ export default function VendorMenuClient({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {paginatedItems.map((item) => {
             const isToggling = togglingId === item.id;
             const isDeleting = deletingId === item.id;
@@ -716,7 +738,6 @@ export default function VendorMenuClient({
                     type="number"
                     min="1"
                     max="180"
-                    step="5"
                     value={formPrepTime}
                     onChange={(e) => setFormPrepTime(e.target.value)}
                     placeholder="20"
