@@ -56,6 +56,8 @@ export default async function HomePage(props: HomePageProps) {
           city,
           state,
           is_open,
+          opening_time,
+          closing_time,
           logo_url,
           banner_url
         ),

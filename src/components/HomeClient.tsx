@@ -29,6 +29,7 @@ import CustomerBottomNav from "./CustomerBottomNav";
 import CustomerTopNav from "./CustomerTopNav";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { getVendorLiveStatus } from "@/lib/vendorStatus";
 
 type Vendor = Database["public"]["Tables"]["vendors"]["Row"];
 type Category = Database["public"]["Tables"]["categories"]["Row"];
@@ -41,6 +42,8 @@ type MenuItem = Database["public"]["Tables"]["menu_items"]["Row"] & {
     city?: string | null;
     state?: string | null;
     is_open: boolean;
+    opening_time?: string | null;
+    closing_time?: string | null;
     logo_url?: string | null;
     banner_url?: string | null;
   } | null;
@@ -199,8 +202,9 @@ export default function HomeClient({
           selectedArea === "All Areas" ||
           item.vendors?.city_area?.toLowerCase() === selectedArea.toLowerCase();
 
-        // 5. Open status
-        const matchesOpen = !openOnly || item.vendors?.is_open === true;
+        // 5. Open status (verified against operating hours and order acceptance)
+        const itemStatus = getVendorLiveStatus(item.vendors);
+        const matchesOpen = !openOnly || itemStatus.isAcceptingOrders;
 
         // 6. Price range
         let matchesPrice = true;
@@ -264,7 +268,8 @@ export default function HomeClient({
         selectedArea === "All Areas" ||
         v.city_area.toLowerCase() === selectedArea.toLowerCase();
 
-      const matchesOpen = !openOnly || v.is_open === true;
+      const vStatus = getVendorLiveStatus(v);
+      const matchesOpen = !openOnly || vStatus.isAcceptingOrders;
 
       return matchesQuery && matchesState && matchesArea && matchesOpen;
     });
@@ -797,16 +802,30 @@ export default function HomeClient({
                             <span className="badge badge-xs badge-ghost text-[10px] font-semibold bg-base-200">
                               {vendor.city_area || vendor.state || "Nigeria"}
                             </span>
-                            {vendor.is_open ? (
-                              <span className="badge badge-xs badge-success/15 text-success font-bold border-none text-[10px] gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
-                                Open
-                              </span>
-                            ) : (
-                              <span className="badge badge-xs badge-ghost text-base-content/50 text-[10px]">
-                                Closed
-                              </span>
-                            )}
+                            {(() => {
+                              const vs = getVendorLiveStatus(vendor);
+                              if (vs.status === "accepting") {
+                                return (
+                                  <span className="badge badge-xs badge-success/15 text-success font-bold border-none text-[10px] gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
+                                    Open
+                                  </span>
+                                );
+                              }
+                              if (vs.status === "paused") {
+                                return (
+                                  <span className="badge badge-xs badge-warning/15 text-warning font-bold border-none text-[10px] gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-warning"></span>
+                                    Paused
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span className="badge badge-xs badge-ghost text-base-content/50 text-[10px]">
+                                  Closed
+                                </span>
+                              );
+                            })()}
                           </div>
                           <h3 className="font-bold text-sm sm:text-[15px] text-base-content truncate">
                             {vendor.business_name}
@@ -927,16 +946,30 @@ export default function HomeClient({
                             <span className="badge badge-xs badge-ghost text-[10px] font-semibold bg-base-200">
                               {vendor.city_area || "Lagos"}
                             </span>
-                            {vendor.is_open ? (
-                              <span className="badge badge-xs badge-success/15 text-success font-bold border-none text-[10px] gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
-                                Open Now
-                              </span>
-                            ) : (
-                              <span className="badge badge-xs badge-ghost text-base-content/50 text-[10px]">
-                                Closed
-                              </span>
-                            )}
+                            {(() => {
+                              const vs = getVendorLiveStatus(vendor);
+                              if (vs.status === "accepting") {
+                                return (
+                                  <span className="badge badge-xs badge-success/15 text-success font-bold border-none text-[10px] gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
+                                    Open Now
+                                  </span>
+                                );
+                              }
+                              if (vs.status === "paused") {
+                                return (
+                                  <span className="badge badge-xs badge-warning/15 text-warning font-bold border-none text-[10px] gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-warning"></span>
+                                    Paused
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span className="badge badge-xs badge-ghost text-base-content/50 text-[10px]">
+                                  Closed
+                                </span>
+                              );
+                            })()}
                           </div>
                           <h3 className="font-bold text-sm sm:text-[15px] text-base-content truncate">
                             {vendor.business_name}

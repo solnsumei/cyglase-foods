@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getVendorLiveStatus } from "@/lib/vendorStatus";
 
 // 1. Customer OTP Authentication
 export async function sendCustomerOtp(prevState: unknown, formData: FormData) {
@@ -190,12 +191,22 @@ export async function placeCustomerOrder({
     }
   }
 
-  // Fetch vendor info to get pickup address if fulfillment is pickup
+  // Fetch vendor info to get pickup address and verify operating hours
   const { data: vendor } = await adminClient
     .from("vendors")
-    .select("user_id, address, city_area, business_name")
+    .select("user_id, address, city_area, business_name, is_open, opening_time, closing_time")
     .eq("id", vendorId)
     .single();
+
+  const vendorStatus = getVendorLiveStatus(vendor);
+  if (!vendorStatus.isAcceptingOrders) {
+    return {
+      error:
+        vendorStatus.status === "closed_hours"
+          ? `This kitchen is currently outside operating hours (${vendorStatus.subtext}).`
+          : "This kitchen is temporarily paused and not accepting new orders right now.",
+    };
+  }
 
   const finalDeliveryAddress =
     fulfillmentType === "pickup"

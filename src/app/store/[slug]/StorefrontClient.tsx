@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import type { Database } from "@/types/database.types";
 import { placeCustomerOrder, CartItem } from "../../customer/actions";
+import { getVendorLiveStatus } from "@/lib/vendorStatus";
 
 type Vendor = Database["public"]["Tables"]["vendors"]["Row"];
 type MenuItem = Database["public"]["Tables"]["menu_items"]["Row"] & {
@@ -49,6 +50,7 @@ export default function StorefrontClient({
   currentUser,
 }: Props) {
   const router = useRouter();
+  const vendorStatus = getVendorLiveStatus(vendor);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -74,6 +76,7 @@ export default function StorefrontClient({
 
   // Cart operations
   const addToCart = (item: MenuItem) => {
+    if (!vendorStatus.isAcceptingOrders) return;
     setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
@@ -118,6 +121,14 @@ export default function StorefrontClient({
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) return;
+    if (!vendorStatus.isAcceptingOrders) {
+      setErrorMsg(
+        vendorStatus.status === "closed_hours"
+          ? `This kitchen is currently outside operating hours (${vendorStatus.subtext}).`
+          : "This kitchen is temporarily paused and not accepting new orders right now."
+      );
+      return;
+    }
     setIsCheckingOut(true);
     setErrorMsg(null);
 
@@ -156,7 +167,7 @@ export default function StorefrontClient({
     <div className="min-h-screen bg-base-200/40 pb-24">
       {/* Top Navbar */}
       <header className="sticky top-0 z-30 bg-base-100/90 backdrop-blur-md border-b border-base-200 px-4 py-3 sm:px-6">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link
             href="/"
             className="btn btn-ghost btn-xs sm:btn-sm gap-1 text-base-content/70 hover:text-primary rounded-xl"
@@ -165,7 +176,7 @@ export default function StorefrontClient({
             <span className="font-semibold text-xs">Back</span>
           </Link>
 
-          <span className="font-black text-sm text-base-content truncate max-w-[200px]">
+          <span className="font-black text-sm sm:text-base text-base-content truncate max-w-[200px] sm:max-w-md">
             {vendor.business_name}
           </span>
 
@@ -184,12 +195,12 @@ export default function StorefrontClient({
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
+      {/* Main Container: Expanded to max-w-6xl matching other pages */}
+      <main className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-5">
         {/* Vendor Header Card with Cover Banner & Logo */}
         <div className="card bg-base-100 shadow-sm border border-base-200 rounded-3xl overflow-hidden">
           {/* Store Banner Image */}
-          <div className="relative h-36 sm:h-48 w-full bg-base-300">
+          <div className="relative h-44 sm:h-56 md:h-64 lg:h-72 w-full bg-base-300">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={bannerImage}
@@ -217,15 +228,20 @@ export default function StorefrontClient({
                 )}
               </div>
 
-              {vendor.is_open ? (
-                <span className="badge badge-success/15 text-success font-black border-none text-xs gap-1.5 py-3 px-3.5 rounded-xl">
-                  <span className="w-2 h-2 rounded-full bg-success"></span>
+              {vendorStatus.status === "accepting" ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-950 border border-emerald-300 shadow-xs dark:bg-emerald-950/80 dark:text-emerald-100 dark:border-emerald-800">
+                  <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
                   Open for Orders
                 </span>
+              ) : vendorStatus.status === "paused" ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-amber-100 text-amber-950 border border-amber-300 shadow-xs dark:bg-amber-950/80 dark:text-amber-100 dark:border-amber-800">
+                  <span className="w-2 h-2 rounded-full bg-amber-600"></span>
+                  Orders Paused
+                </span>
               ) : (
-                <span className="badge badge-error/15 text-error font-black border-none text-xs gap-1.5 py-3 px-3.5 rounded-xl">
-                  <span className="w-2 h-2 rounded-full bg-error"></span>
-                  Kitchen Closed
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-red-100 text-red-950 border border-red-300 shadow-xs dark:bg-red-950/80 dark:text-red-100 dark:border-red-800">
+                  <span className="w-2 h-2 rounded-full bg-red-600"></span>
+                  {vendorStatus.badgeText}
                 </span>
               )}
             </div>
@@ -261,6 +277,19 @@ export default function StorefrontClient({
                   </span>
                 </div>
               </div>
+
+              {!vendorStatus.isAcceptingOrders && (
+                <div className="mt-4 p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 dark:bg-amber-950/40 dark:border-amber-700/60 flex items-start sm:items-center gap-3 shadow-xs">
+                  <div className="w-8 h-8 rounded-xl bg-amber-200/80 dark:bg-amber-900/60 flex items-center justify-center shrink-0">
+                    <Clock className="w-4 h-4 text-amber-950 dark:text-amber-100" />
+                  </div>
+                  <div className="text-xs sm:text-sm font-bold text-amber-950 dark:text-amber-100 leading-snug">
+                    {vendorStatus.status === "closed_hours"
+                      ? `This kitchen is currently outside operating hours (${vendorStatus.subtext}). Menu is available for browsing only.`
+                      : "This kitchen is temporarily paused and not accepting new orders right now."}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -308,7 +337,7 @@ export default function StorefrontClient({
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredItems.map((item) => {
               const inCartItem = cart.find((i) => i.id === item.id);
 
@@ -317,10 +346,30 @@ export default function StorefrontClient({
                   key={item.id}
                   className="card bg-base-100 shadow-sm border border-base-200 rounded-2xl p-4 flex flex-row items-center justify-between gap-3 hover:border-primary/30 transition-all"
                 >
+                  {item.image_url && (
+                    <div className="w-18 h-18 sm:w-22 sm:h-22 rounded-2xl overflow-hidden shrink-0 bg-base-200 border border-base-200/80">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
                   <div className="flex-1 min-w-0">
-                    <span className="badge badge-xs badge-ghost text-[10px] font-medium bg-base-200 mb-1">
-                      {item.categories?.name || "Dish"}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                      <span className="badge badge-xs badge-ghost text-[10px] font-medium bg-base-200">
+                        {item.categories?.name || "Dish"}
+                      </span>
+                      {item.preparation_time_minutes ? (
+                        <span className="badge badge-xs badge-ghost text-[10px] font-medium bg-base-200 text-base-content/70 gap-1">
+                          <Clock className="w-2.5 h-2.5 text-primary" />
+                          ~{item.preparation_time_minutes} mins
+                        </span>
+                      ) : null}
+                    </div>
+
                     <h3 className="font-bold text-base text-base-content truncate">
                       {item.name}
                     </h3>
@@ -357,7 +406,7 @@ export default function StorefrontClient({
                     ) : (
                       <button
                         onClick={() => addToCart(item)}
-                        disabled={!vendor.is_open || !item.is_available}
+                        disabled={!vendorStatus.isAcceptingOrders || !item.is_available}
                         className="btn btn-primary btn-sm rounded-xl font-bold text-white shadow-xs gap-1"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -436,6 +485,19 @@ export default function StorefrontClient({
 
             {/* Scrollable Content Body */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {!vendorStatus.isAcceptingOrders && (
+                <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 dark:bg-amber-950/40 dark:border-amber-700/60 flex items-start gap-3 shadow-xs">
+                  <div className="w-8 h-8 rounded-xl bg-amber-200/80 dark:bg-amber-900/60 flex items-center justify-center shrink-0">
+                    <Clock className="w-4 h-4 text-amber-950 dark:text-amber-100" />
+                  </div>
+                  <div className="text-xs sm:text-sm font-bold text-amber-950 dark:text-amber-100 leading-snug">
+                    {vendorStatus.status === "closed_hours"
+                      ? `This kitchen is outside operating hours (${vendorStatus.subtext}). Orders cannot be placed right now.`
+                      : "This kitchen is temporarily paused and not accepting new orders right now."}
+                  </div>
+                </div>
+              )}
+
               {errorMsg && (
                 <div className="alert alert-error text-xs py-2 rounded-xl text-white">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -677,7 +739,7 @@ export default function StorefrontClient({
               <button
                 type="submit"
                 form="checkout-form"
-                disabled={isCheckingOut}
+                disabled={isCheckingOut || !vendorStatus.isAcceptingOrders}
                 className="btn btn-primary w-full rounded-xl text-white font-black text-sm shadow-lg shadow-primary/25 py-3"
               >
                 {isCheckingOut ? (

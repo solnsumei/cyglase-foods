@@ -1,21 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import {
   UtensilsCrossed,
   Plus,
   Search,
   Edit2,
   Trash2,
-  CheckCircle2,
-  XCircle,
   AlertCircle,
   Loader2,
-  DollarSign,
-  Tag,
   ChevronLeft,
   ChevronRight,
-  Filter,
+  Clock,
+  Camera,
+  UploadCloud,
+  X,
+  Tag,
+  DollarSign,
 } from "lucide-react";
 import { toggleItemStock, upsertMenuItem, deleteMenuItem } from "../../actions";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -32,6 +34,8 @@ interface Props {
   initialItems: MenuItem[];
   categories: Category[];
 }
+
+const PREP_TIME_PRESETS = [10, 15, 20, 30, 45, 60];
 
 export default function VendorMenuClient({
   vendorId,
@@ -53,11 +57,16 @@ export default function VendorMenuClient({
   const [alertInfo, setAlertInfo] = useState<{ title: string; message: string } | null>(null);
 
   // Form State
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formName, setFormName] = useState("");
   const [formCategoryId, setFormCategoryId] = useState("");
   const [formPrice, setFormPrice] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formAvailable, setFormAvailable] = useState(true);
+  const [formPrepTime, setFormPrepTime] = useState("20");
+  const [formImagePreview, setFormImagePreview] = useState<string | null>(null);
+  const [formSelectedFile, setFormSelectedFile] = useState<File | null>(null);
+  const [formRemoveImage, setFormRemoveImage] = useState(false);
 
   // Filter items
   const filteredItems = items.filter((item) => {
@@ -84,18 +93,13 @@ export default function VendorMenuClient({
     setFormPrice("");
     setFormDescription("");
     setFormAvailable(true);
+    setFormPrepTime("20");
+    setFormImagePreview(null);
+    setFormSelectedFile(null);
+    setFormRemoveImage(false);
     setActionError(null);
     setIsModalOpen(true);
   };
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("action") === "add") {
-        openAddModal();
-      }
-    }
-  }, []);
 
   const openEditModal = (item: MenuItem) => {
     setEditingItem(item);
@@ -104,9 +108,28 @@ export default function VendorMenuClient({
     setFormPrice(item.price.toString());
     setFormDescription(item.description || "");
     setFormAvailable(item.is_available);
+    setFormPrepTime(
+      item.preparation_time_minutes ? item.preparation_time_minutes.toString() : "20"
+    );
+    setFormImagePreview(item.image_url || null);
+    setFormSelectedFile(null);
+    setFormRemoveImage(false);
     setActionError(null);
     setIsModalOpen(true);
   };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("action") === "add") {
+        if (window.innerWidth < 768) {
+          window.location.href = "/vendor/menu/new";
+        } else {
+          openAddModal();
+        }
+      }
+    }
+  }, []);
 
   const handleStockToggle = async (item: MenuItem) => {
     setTogglingId(item.id);
@@ -149,6 +172,35 @@ export default function VendorMenuClient({
     }
   };
 
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setActionError("Image file is too large. Maximum size is 10MB.");
+      return;
+    }
+
+    setFormSelectedFile(file);
+    setFormRemoveImage(false);
+    setActionError(null);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClearImage = () => {
+    setFormSelectedFile(null);
+    setFormImagePreview(null);
+    setFormRemoveImage(true);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -162,6 +214,15 @@ export default function VendorMenuClient({
     formData.append("price", formPrice);
     formData.append("description", formDescription);
     formData.append("is_available", formAvailable ? "true" : "false");
+    formData.append("preparation_time_minutes", formPrepTime);
+
+    if (formRemoveImage) {
+      formData.append("remove_image", "true");
+    } else if (formSelectedFile) {
+      formData.append("image_file", formSelectedFile);
+    } else if (editingItem?.image_url) {
+      formData.append("image_url", editingItem.image_url);
+    }
 
     try {
       const res = await upsertMenuItem(formData);
@@ -171,7 +232,7 @@ export default function VendorMenuClient({
         return;
       }
 
-      // Successfully saved, update local state
+      // Successfully saved, update local state or reload
       const targetCat = categories.find((c) => c.id === formCategoryId);
       if (editingItem) {
         setItems((prev) =>
@@ -184,6 +245,10 @@ export default function VendorMenuClient({
                   price: parseFloat(formPrice),
                   description: formDescription || null,
                   is_available: formAvailable,
+                  preparation_time_minutes: formPrepTime ? parseInt(formPrepTime, 10) : null,
+                  image_url: formRemoveImage
+                    ? null
+                    : formImagePreview || i.image_url,
                   categories: targetCat
                     ? { name: targetCat.name, slug: targetCat.slug }
                     : i.categories,
@@ -192,7 +257,6 @@ export default function VendorMenuClient({
           )
         );
       } else {
-        // Reload page to get created item with id
         window.location.reload();
       }
 
@@ -218,9 +282,19 @@ export default function VendorMenuClient({
           </p>
         </div>
 
+        {/* Mobile: Link to dedicated page */}
+        <Link
+          href="/vendor/menu/new"
+          className="btn btn-primary btn-sm sm:btn-md gap-1.5 shadow-md shadow-primary/20 text-white rounded-xl md:hidden"
+        >
+          <Plus className="w-4 h-4" />
+          <span className="font-bold">Add Dish</span>
+        </Link>
+
+        {/* Desktop: Modal trigger */}
         <button
           onClick={openAddModal}
-          className="btn btn-primary btn-sm sm:btn-md gap-1.5 shadow-md shadow-primary/20 text-white rounded-xl"
+          className="btn btn-primary btn-sm sm:btn-md gap-1.5 shadow-md shadow-primary/20 text-white rounded-xl hidden md:inline-flex"
         >
           <Plus className="w-4 h-4" />
           <span className="font-bold">Add Dish</span>
@@ -301,12 +375,20 @@ export default function VendorMenuClient({
           <p className="text-xs text-base-content/60 mt-1 max-w-xs mx-auto">
             {searchQuery
               ? "Try searching for a different food item or clear the filter."
-              : "Start adding mouthwatering meals, swallows, drinks or soups to attract buyers."}
+              : "Start adding mouthwatering meals, swallows, drinks or soups with photos and preparation times."}
           </p>
           <div className="mt-4">
+            {/* Mobile Link */}
+            <Link
+              href="/vendor/menu/new"
+              className="btn btn-primary btn-sm rounded-xl text-white font-bold md:hidden"
+            >
+              <Plus className="w-4 h-4 mr-1" /> Add Your First Dish
+            </Link>
+            {/* Desktop Button */}
             <button
               onClick={openAddModal}
-              className="btn btn-primary btn-sm rounded-xl text-white font-bold"
+              className="btn btn-primary btn-sm rounded-xl text-white font-bold hidden md:inline-flex"
             >
               <Plus className="w-4 h-4 mr-1" /> Add Your First Dish
             </button>
@@ -327,9 +409,26 @@ export default function VendorMenuClient({
                     : "border-base-300 bg-base-200/50 opacity-80"
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  {/* Dish Image Thumbnail */}
+                  {item.image_url ? (
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 bg-base-200 border border-base-200/80">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl shrink-0 bg-base-200/60 border border-dashed border-base-300 flex flex-col items-center justify-center text-base-content/40 p-2 text-center">
+                      <UtensilsCrossed className="w-5 h-5 mb-1" />
+                      <span className="text-[10px] font-medium leading-tight">No Photo</span>
+                    </div>
+                  )}
+
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
                       <span className="badge badge-sm badge-ghost font-medium text-xs bg-base-200 text-base-content/70 border-none">
                         {item.categories?.name || "Dish"}
                       </span>
@@ -344,6 +443,12 @@ export default function VendorMenuClient({
                           Sold Out
                         </span>
                       )}
+                      {item.preparation_time_minutes ? (
+                        <span className="badge badge-sm badge-ghost font-medium text-[11px] bg-base-200 text-base-content/70 border-none gap-1">
+                          <Clock className="w-3 h-3 text-primary" />
+                          {item.preparation_time_minutes}m prep
+                        </span>
+                      ) : null}
                     </div>
 
                     <h3 className="font-bold text-base text-base-content truncate">
@@ -361,7 +466,7 @@ export default function VendorMenuClient({
                     </div>
                   </div>
 
-                  {/* Stock quick switch */}
+                  {/* Stock switch & Actions */}
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <div className="form-control">
                       <label className="label cursor-pointer p-0 gap-1.5">
@@ -380,13 +485,24 @@ export default function VendorMenuClient({
 
                     {/* Edit & Delete Buttons */}
                     <div className="flex items-center gap-1 mt-1">
+                      {/* Mobile Edit: Dedicated page */}
+                      <Link
+                        href={`/vendor/menu/${item.id}`}
+                        className="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-primary hover:bg-primary/10 rounded-lg md:hidden"
+                        title="Edit Dish"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </Link>
+
+                      {/* Desktop Edit: Modal */}
                       <button
                         onClick={() => openEditModal(item)}
-                        className="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-primary hover:bg-primary/10 rounded-lg"
+                        className="btn btn-ghost btn-xs btn-square text-base-content/60 hover:text-primary hover:bg-primary/10 rounded-lg hidden md:inline-flex"
                         title="Edit Dish"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
+
                       <button
                         onClick={() => setDeleteTarget({ id: item.id, name: item.name })}
                         disabled={isDeleting}
@@ -449,10 +565,10 @@ export default function VendorMenuClient({
         </div>
       )}
 
-      {/* Add / Edit Dish Modal */}
+      {/* Desktop Modal for Add / Edit Dish */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-          <div className="bg-base-100 w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-base-100 w-full max-w-xl rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-base-200 mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
@@ -479,6 +595,57 @@ export default function VendorMenuClient({
             )}
 
             <form onSubmit={handleFormSubmit} className="space-y-4">
+              {/* Photo Upload in Desktop Modal */}
+              <div className="space-y-1.5">
+                <label className="label text-xs font-bold text-base-content/80 p-0">
+                  Dish Photo
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/jpg"
+                  onChange={handleImageFileChange}
+                  className="hidden"
+                />
+
+                {formImagePreview ? (
+                  <div className="relative rounded-2xl overflow-hidden border border-base-300 bg-base-200/50 aspect-video max-h-48 flex items-center justify-center group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={formImagePreview}
+                      alt="Dish preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="btn btn-xs btn-primary rounded-xl text-white font-bold gap-1 shadow-md"
+                      >
+                        <Camera className="w-3.5 h-3.5" /> Change
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleClearImage}
+                        className="btn btn-xs btn-error rounded-xl text-white font-bold gap-1 shadow-md"
+                      >
+                        <X className="w-3.5 h-3.5" /> Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-base-300 hover:border-primary/50 bg-base-200/30 hover:bg-primary/5 rounded-2xl p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5"
+                  >
+                    <UploadCloud className="w-6 h-6 text-primary" />
+                    <span className="text-xs font-bold text-base-content">
+                      Click to upload photo (JPG, PNG, WebP)
+                    </span>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="label text-xs font-bold text-base-content/80 pb-1">
                   Dish Name *
@@ -495,8 +662,8 @@ export default function VendorMenuClient({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="label text-xs font-bold text-base-content/80 pb-1">
-                    Category *
+                  <label className="label text-xs font-bold text-base-content/80 pb-1 flex items-center gap-1">
+                    <Tag className="w-3 h-3 text-primary" /> Category *
                   </label>
                   <select
                     value={formCategoryId}
@@ -513,8 +680,8 @@ export default function VendorMenuClient({
                 </div>
 
                 <div>
-                  <label className="label text-xs font-bold text-base-content/80 pb-1">
-                    Price (₦ Naira) *
+                  <label className="label text-xs font-bold text-base-content/80 pb-1 flex items-center gap-1">
+                    <DollarSign className="w-3 h-3 text-primary" /> Price (₦ Naira) *
                   </label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-sm text-base-content/50">
@@ -534,6 +701,46 @@ export default function VendorMenuClient({
                 </div>
               </div>
 
+              {/* Prep time in Desktop Modal */}
+              <div className="p-3 bg-base-200/40 border border-base-200 rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="label text-xs font-bold text-base-content/80 p-0 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-primary" /> Prep Time (Minutes)
+                  </label>
+                  <span className="badge badge-primary font-bold text-[11px]">
+                    {formPrepTime} mins
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="180"
+                    step="5"
+                    value={formPrepTime}
+                    onChange={(e) => setFormPrepTime(e.target.value)}
+                    placeholder="20"
+                    className="input input-bordered input-sm w-24 rounded-lg font-bold text-center"
+                  />
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {PREP_TIME_PRESETS.map((mins) => (
+                      <button
+                        key={mins}
+                        type="button"
+                        onClick={() => setFormPrepTime(mins.toString())}
+                        className={`btn btn-xs rounded-lg ${
+                          formPrepTime === mins.toString()
+                            ? "btn-primary text-white"
+                            : "btn-ghost bg-base-100 border border-base-200"
+                        }`}
+                      >
+                        {mins}m
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="label text-xs font-bold text-base-content/80 pb-1">
                   Description / Portion Details (Optional)
@@ -542,7 +749,7 @@ export default function VendorMenuClient({
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="e.g. Served with sweet fried dodo, spicy pepper sauce, and cold beverage of choice."
-                  rows={3}
+                  rows={2}
                   className="textarea textarea-bordered w-full rounded-xl text-sm"
                 />
               </div>

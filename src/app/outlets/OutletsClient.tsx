@@ -18,6 +18,7 @@ import {
 import CustomerTopNav from "@/components/CustomerTopNav";
 import CustomerBottomNav from "@/components/CustomerBottomNav";
 import type { Database } from "@/types/database.types";
+import { getVendorLiveStatus } from "@/lib/vendorStatus";
 
 type Vendor = Database["public"]["Tables"]["vendors"]["Row"];
 
@@ -79,7 +80,8 @@ export default function OutletsClient({
 
       const matchesArea = selectedArea === "all" || vendor.city_area === selectedArea;
 
-      const matchesOpen = !openOnly || vendor.is_open === true;
+      const vStatus = getVendorLiveStatus(vendor);
+      const matchesOpen = !openOnly || vStatus.isAcceptingOrders;
 
       return matchesQuery && matchesState && matchesArea && matchesOpen;
     });
@@ -168,11 +170,13 @@ export default function OutletsClient({
                   setSelectedState(e.target.value);
                   setSelectedArea("all"); // Reset area when state changes
                 }}
-                className="select select-bordered select-sm w-full rounded-xl bg-base-200/60 font-semibold text-xs"
+                className="select select-bordered select-sm w-full rounded-xl bg-base-100 font-semibold text-xs border-base-300 shadow-xs focus:bg-base-100"
               >
-                <option value="all">All States (Nigeria)</option>
+                <option value="all" className="bg-base-100 text-base-content">
+                  All States (Nigeria)
+                </option>
                 {allStates.map((st) => (
-                  <option key={st} value={st}>
+                  <option key={st} value={st} className="bg-base-100 text-base-content">
                     {st}
                   </option>
                 ))}
@@ -187,11 +191,13 @@ export default function OutletsClient({
               <select
                 value={selectedArea}
                 onChange={(e) => setSelectedArea(e.target.value)}
-                className="select select-bordered select-sm w-full rounded-xl bg-base-200/60 font-semibold text-xs"
+                className="select select-bordered select-sm w-full rounded-xl bg-base-100 font-semibold text-xs border-base-300 shadow-xs focus:bg-base-100"
               >
-                <option value="all">All Areas</option>
+                <option value="all" className="bg-base-100 text-base-content">
+                  All Areas
+                </option>
                 {allAreas.map((area) => (
-                  <option key={area} value={area}>
+                  <option key={area} value={area} className="bg-base-100 text-base-content">
                     {area}
                   </option>
                 ))}
@@ -200,7 +206,7 @@ export default function OutletsClient({
 
             {/* Filter 3: Open Status Toggle */}
             <div className="flex flex-col justify-end">
-              <label className="flex items-center justify-between p-2 rounded-xl bg-base-200/60 border border-base-200 cursor-pointer h-8.5">
+              <label className="flex items-center justify-between p-2 rounded-xl bg-base-100 border border-base-300 shadow-xs cursor-pointer h-8.5">
                 <span className="text-xs font-bold text-base-content">
                   Open Kitchens Only
                 </span>
@@ -253,16 +259,29 @@ export default function OutletsClient({
                     )}
 
                     {/* Open/Closed Live Badge */}
-                    <div className="absolute top-3 right-3">
-                      <span
-                        className={`badge badge-sm text-[10px] font-bold text-white shadow-xs ${
-                          vendor.is_open ? "badge-success" : "badge-neutral"
-                        }`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-white mr-1"></span>
-                        {vendor.is_open ? "Open Now" : "Closed"}
-                      </span>
-                    </div>
+                    {(() => {
+                      const vStatus = getVendorLiveStatus(vendor);
+                      return (
+                        <div className="absolute top-3 right-3">
+                          <span
+                            className={`badge badge-sm text-[10px] font-bold text-white shadow-xs ${
+                              vStatus.status === "accepting"
+                                ? "badge-success"
+                                : vStatus.status === "paused"
+                                ? "badge-warning"
+                                : "badge-neutral"
+                            }`}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-white mr-1"></span>
+                            {vStatus.status === "accepting"
+                              ? "Open Now"
+                              : vStatus.status === "paused"
+                              ? "Paused"
+                              : "Closed"}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Outlet Details */}

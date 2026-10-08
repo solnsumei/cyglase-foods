@@ -293,22 +293,83 @@ export async function upsertMenuItem(formData: FormData) {
   const price = parseFloat(formData.get("price") as string) || 0;
   const is_available = formData.get("is_available") === "true" || formData.get("is_available") === "on";
 
+  const rawPrep = formData.get("preparation_time_minutes") as string | null;
+  const preparation_time_minutes =
+    rawPrep && !isNaN(parseInt(rawPrep, 10)) && parseInt(rawPrep, 10) > 0
+      ? parseInt(rawPrep, 10)
+      : null;
+
+  let image_url = (formData.get("image_url") as string | null) || null;
+  const imageFile = formData.get("image_file") as File | null;
+  const removeImage = formData.get("remove_image") === "true";
+
+  if (removeImage) {
+    image_url = null;
+  }
+
   if (!name || !category_id || price <= 0) {
     return { error: "Please enter item name, category, and a valid price in Naira." };
   }
 
   const adminClient = createAdminClient();
 
+  // Handle image upload if a file was provided
+  if (imageFile && typeof imageFile === "object" && "size" in imageFile && imageFile.size > 0) {
+    if (imageFile.size > 10 * 1024 * 1024) {
+      return { error: "Dish image must be less than 10MB in size." };
+    }
+
+    const fileExt = imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
+    const fileName = `dish_${vendor_id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+    const arrayBuffer = await imageFile.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const { error: uploadError } = await adminClient.storage
+      .from("food-images")
+      .upload(fileName, buffer, {
+        contentType: imageFile.type || "image/jpeg",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("Dish image upload error:", uploadError.message);
+      return { error: `Image upload failed: ${uploadError.message}` };
+    }
+
+    const { data: urlData } = adminClient.storage
+      .from("food-images")
+      .getPublicUrl(fileName);
+
+    image_url = urlData.publicUrl;
+  }
+
   if (id) {
     const { error } = await adminClient
       .from("menu_items")
-      .update({ name, category_id, description, price, is_available })
+      .update({
+        name,
+        category_id,
+        description,
+        price,
+        is_available,
+        image_url,
+        preparation_time_minutes,
+      })
       .eq("id", id);
     if (error) return { error: error.message };
   } else {
     const { error } = await adminClient
       .from("menu_items")
-      .insert({ vendor_id, category_id, name, description, price, is_available });
+      .insert({
+        vendor_id,
+        category_id,
+        name,
+        description,
+        price,
+        is_available,
+        image_url,
+        preparation_time_minutes,
+      });
     if (error) return { error: error.message };
   }
 

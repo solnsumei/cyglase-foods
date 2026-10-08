@@ -277,12 +277,12 @@ export default async function AdminDashboardPage() {
                 <span className="text-[10px] text-base-content/60">Cooking/Transit</span>
               </div>
 
-              <div className="p-3 rounded-xl bg-warning/10 border border-warning/20">
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-warning-content">Pending</span>
-                  <AlertCircle className="w-3.5 h-3.5 text-warning-content" />
+                  <span className="font-semibold text-amber-900 dark:text-amber-200">Pending</span>
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-700 dark:text-amber-300" />
                 </div>
-                <div className="text-xl font-black text-warning-content mt-1">{pending}</div>
+                <div className="text-xl font-black text-amber-900 dark:text-amber-200 mt-1">{pending}</div>
                 <span className="text-[10px] text-base-content/60">Action Needed</span>
               </div>
 
