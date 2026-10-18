@@ -326,7 +326,25 @@ export default function StorefrontClient({
         </div>
 
         {/* Menu Items List */}
-        {filteredItems.length === 0 ? (
+        {menuItems.length === 0 ? (
+          <div className="card bg-base-100 border border-base-200 p-8 text-center rounded-3xl max-w-md mx-auto my-6">
+            <UtensilsCrossed className="w-10 h-10 text-primary/50 mx-auto mb-3" />
+            <h3 className="font-bold text-base text-base-content">
+              Menu Coming Soon 🍲
+            </h3>
+            <p className="text-xs text-base-content/65 mt-1 leading-relaxed">
+              This kitchen is currently preparing their dishes. Please explore other active food outlets in the meantime!
+            </p>
+            <div className="mt-4">
+              <Link
+                href="/outlets"
+                className="btn btn-primary btn-sm rounded-xl font-bold text-white shadow-xs"
+              >
+                Browse Active Kitchens
+              </Link>
+            </div>
+          </div>
+        ) : filteredItems.length === 0 ? (
           <div className="card bg-base-100 border border-base-200 p-8 text-center rounded-3xl">
             <UtensilsCrossed className="w-8 h-8 text-base-content/40 mx-auto mb-2" />
             <h3 className="font-bold text-sm text-base-content">

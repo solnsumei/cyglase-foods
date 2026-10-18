@@ -46,6 +46,10 @@ export default async function OutletsPage() {
     }
   }
 
+  // Only show vendors that have at least one available menu item
+  const vendorIdsWithMenu = new Set((menuItems || []).map((m) => m.vendor_id));
+  const vendorsWithMenu = (vendors || []).filter((v) => vendorIdsWithMenu.has(v.id));
+
   return (
     <Suspense
       fallback={
@@ -62,7 +66,7 @@ export default async function OutletsPage() {
       <OutletsClient
         user={user}
         isVendor={isVendor}
-        vendors={vendors || []}
+        vendors={vendorsWithMenu}
         menuItems={menuItems || []}
       />
     </Suspense>

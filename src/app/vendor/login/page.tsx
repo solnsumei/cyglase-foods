@@ -2,18 +2,14 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { sendVendorOtp, verifyVendorOtp, getDbLocations } from "../actions";
+import { sendVendorOtp, getDbLocations } from "../actions";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import OtpInput from "@/components/OtpInput";
 import {
-  Utensils,
   Mail,
-  KeyRound,
   ArrowLeft,
   Store,
   Sparkles,
-  CheckCircle,
   ChefHat,
   Phone,
   MapPin,
@@ -27,14 +23,11 @@ function VendorLoginContent() {
     modeParam === "register" || modeParam === "signup" ? "register" : "login";
 
   const [authMode, setAuthMode] = useState<"login" | "register">(initialMode);
-  const [step, setStep] = useState<"email" | "otp">("email");
-  const [email, setEmail] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [phone, setPhone] = useState("");
   const [state, setState] = useState("Lagos");
   const [cityArea, setCityArea] = useState("");
   const [dbLocations, setDbLocations] = useState<any[]>([]);
-  const [otp, setOtp] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -94,37 +87,8 @@ function VendorLoginContent() {
     if (res?.error) {
       setErrorMsg(res.error);
     } else if (res?.success) {
-      setEmail(res.email || "");
-      setOtp("");
-      setStep("otp");
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!otp || otp.length < 6) {
-      setErrorMsg("Please enter all 6 digits of the code");
-      return;
-    }
-
-    setIsLoading(true);
-    setErrorMsg(null);
-
-    const formData = new FormData(e.currentTarget);
-    formData.append("email", email);
-    formData.set("token", otp);
-    formData.append("mode", authMode);
-    if (authMode === "register") {
-      formData.append("business_name", businessName);
-      formData.append("phone", phone);
-      formData.append("state", state);
-      formData.append("city_area", cityArea);
-    }
-    const res = await verifyVendorOtp(null, formData);
-    setIsLoading(false);
-
-    if (res?.error) {
-      setErrorMsg(res.error);
+      const email = res.email || "";
+      router.push(`/verify-otp?email=${encodeURIComponent(email)}&type=vendor&mode=${authMode}`);
     }
   };
 
@@ -154,38 +118,38 @@ function VendorLoginContent() {
         </div>
 
         {/* Auth Mode Toggle Tabs (Register vs Log In) */}
-        {step === "email" && (
-          <div className="grid grid-cols-2 p-1 bg-base-300/60 rounded-2xl mb-4 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode("register");
-                setErrorMsg(null);
-              }}
-              className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${authMode === "register"
+        <div className="grid grid-cols-2 p-1 bg-base-300/60 rounded-2xl mb-4 text-xs font-bold">
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode("register");
+              setErrorMsg(null);
+            }}
+            className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              authMode === "register"
                 ? "bg-base-100 text-primary shadow-sm font-black"
                 : "text-base-content/60 hover:text-base-content"
-                }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-warning" />
-              <span>Register Kitchen</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode("login");
-                setErrorMsg(null);
-              }}
-              className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${authMode === "login"
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-warning" />
+            <span>Register Kitchen</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode("login");
+              setErrorMsg(null);
+            }}
+            className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              authMode === "login"
                 ? "bg-base-100 text-primary shadow-sm font-black"
                 : "text-base-content/60 hover:text-base-content"
-                }`}
-            >
-              <Store className="w-3.5 h-3.5" />
-              <span>Vendor Log In</span>
-            </button>
-          </div>
-        )}
+            }`}
+          >
+            <Store className="w-3.5 h-3.5" />
+            <span>Vendor Log In</span>
+          </button>
+        </div>
 
         {/* Card */}
         <div className="card bg-base-100 shadow-xl border border-base-200 rounded-3xl">
@@ -196,92 +160,68 @@ function VendorLoginContent() {
               </div>
             )}
 
-            {step === "email" ? (
-              <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
-                {authMode === "register" ? (
-                  <>
-                    <div className="bg-primary/5 border border-primary/15 rounded-2xl p-3.5 mb-1">
-                      <h3 className="font-black text-xs text-primary flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        Kitchen Vendor Registration
-                      </h3>
-                      <p className="text-[11px] text-base-content/70 mt-1 leading-relaxed">
-                        Enter your business name, contact info, and kitchen location to get listed.
-                      </p>
-                    </div>
+            <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
+              {authMode === "register" ? (
+                <>
+                  <div className="bg-primary/5 border border-primary/15 rounded-2xl p-3.5 mb-1">
+                    <h3 className="font-black text-xs text-primary flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Kitchen Vendor Registration
+                    </h3>
+                    <p className="text-[11px] text-base-content/70 mt-1 leading-relaxed">
+                      Enter your business name, contact info, and kitchen location to get listed.
+                    </p>
+                  </div>
 
-                    {/* Business Name */}
+                  {/* Business Name */}
+                  <div className="form-control">
+                    <label className="label py-1">
+                      <span className="label-text font-bold text-xs text-base-content/80">
+                        Kitchen / Brand Name
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <Store className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
+                      <input
+                        type="text"
+                        required
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                        placeholder="e.g. Mama Put Express, Iya Basira Kitchen"
+                        className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Business Phone */}
+                  <div className="form-control">
+                    <label className="label py-1">
+                      <span className="label-text font-bold text-xs text-base-content/80">
+                        Phone Number (For WhatsApp & Orders)
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <Phone className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
+                      <input
+                        type="tel"
+                        required
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="0803 123 4567"
+                        className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* State & City/Area Selection */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="form-control">
                       <label className="label py-1">
                         <span className="label-text font-bold text-xs text-base-content/80">
-                          Business / Kitchen Name *
-                        </span>
-                      </label>
-                      <div className="relative">
-                        <Store className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
-                        <input
-                          type="text"
-                          name="business_name"
-                          required
-                          value={businessName}
-                          onChange={(e) => setBusinessName(e.target.value)}
-                          placeholder="e.g. Mama Put Kitchen & Grills"
-                          className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Business Email */}
-                    <div className="form-control">
-                      <label className="label py-1">
-                        <span className="label-text font-bold text-xs text-base-content/80">
-                          Business Email Address *
-                        </span>
-                      </label>
-                      <div className="relative">
-                        <Mail className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
-                        <input
-                          type="email"
-                          name="email"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="e.g. chef@mamatolafoods.com"
-                          className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Phone Number */}
-                    <div className="form-control">
-                      <label className="label py-1">
-                        <span className="label-text font-bold text-xs text-base-content/80">
-                          Phone Number (for Order Alerts) *
-                        </span>
-                      </label>
-                      <div className="relative">
-                        <Phone className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
-                        <input
-                          type="tel"
-                          name="phone"
-                          required
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          placeholder="e.g. 08012345678"
-                          className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
-                        />
-                      </div>
-                    </div>
-
-                    {/* State & City Area Grid from Database */}
-                    <div className="form-control">
-                      <label className="label py-1">
-                        <span className="label-text font-bold text-xs text-base-content/80">
-                          State *
+                          State
                         </span>
                       </label>
                       <select
-                        name="state"
                         value={state}
                         onChange={(e) => {
                           setState(e.target.value);
@@ -289,167 +229,108 @@ function VendorLoginContent() {
                         }}
                         className="select select-bordered select-md w-full focus:select-primary text-sm rounded-xl font-medium"
                       >
-                        {dbLocations.length > 0 ? (
-                          dbLocations.map((st) => (
-                            <option key={st.id} value={st.name}>
-                              {st.name}
-                            </option>
-                          ))
-                        ) : (
-                          <option value="">Loading states...</option>
-                        )}
+                        {dbLocations.map((loc) => (
+                          <option key={loc.id} value={loc.name}>
+                            {loc.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
+
                     <div className="form-control">
                       <label className="label py-1">
                         <span className="label-text font-bold text-xs text-base-content/80">
-                          Area / Neighborhood in {state} *
+                          Neighborhood / Area
                         </span>
                       </label>
                       <div className="relative">
-                        <MapPin className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
+                        <MapPin className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5 pointer-events-none" />
                         <input
                           type="text"
-                          name="city_area"
                           required
-                          list="cities-datalist"
                           value={cityArea}
                           onChange={(e) => setCityArea(e.target.value)}
-                          placeholder={`e.g. ${dbLocations.find((l) => l.name === state)?.cities?.[0]?.name || "Ikeja, Yaba, Ipaja"
-                            }`}
+                          placeholder="e.g. Yaba, Ikeja, Lekki"
                           className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
+                          list="area-suggestions"
                         />
-                        <datalist id="cities-datalist">
-                          {(dbLocations.find((l) => l.name === state)?.cities || []).map((city: any) => (
-                            <option key={city.id} value={city.name} />
-                          ))}
+                        <datalist id="area-suggestions">
+                          {dbLocations
+                            .find((loc) => loc.name === state)
+                            ?.cities?.map((c: any) => (
+                              <option key={c.id} value={c.name} />
+                            ))}
                         </datalist>
                       </div>
                     </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-left mb-1">
-                      <h3 className="font-black text-sm text-base-content">
-                        Welcome Back, Chef!
-                      </h3>
-                      <p className="text-[11px] text-base-content/60">
-                        Sign in to manage your kitchen orders and live menu stock.
-                      </p>
-                    </div>
+                  </div>
+                </>
+              ) : null}
 
-                    <div className="form-control">
-                      <label className="label py-1">
-                        <span className="label-text font-bold text-xs text-base-content/80">
-                          Registered Vendor Email
-                        </span>
-                      </label>
-                      <div className="relative">
-                        <Mail className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
-                        <input
-                          type="email"
-                          name="email"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="e.g. chef@mamatolafoods.com"
-                          className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="btn btn-primary w-full mt-1 font-black shadow-lg shadow-primary/25 rounded-xl text-white text-sm py-3.5"
-                >
-                  {isLoading ? (
-                    <span className="loading loading-spinner loading-sm"></span>
-                  ) : authMode === "register" ? (
-                    "Register & Get Started 🚀"
-                  ) : (
-                    "Send One-Time Login Code"
-                  )}
-                </button>
-
-                <p className="text-[11px] text-base-content/50 text-center">
-                  🔒 Passwordless login with OTP email verification
-                </p>
-
-                {/* Footer Switcher */}
-                <div className="pt-2 border-t border-base-200 text-center text-xs text-base-content/70">
-                  {authMode === "register" ? (
-                    <span>
-                      Already have a vendor account?{" "}
-                      <button
-                        type="button"
-                        onClick={() => setAuthMode("login")}
-                        className="text-primary font-bold hover:underline"
-                      >
-                        Sign in here
-                      </button>
-                    </span>
-                  ) : (
-                    <span>
-                      Want to sell your food on Cyglase?{" "}
-                      <button
-                        type="button"
-                        onClick={() => setAuthMode("register")}
-                        className="text-primary font-bold hover:underline"
-                      >
-                        Register your kitchen
-                      </button>
-                    </span>
-                  )}
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
-                <div className="text-center mb-1">
-                  <span className="badge badge-primary/10 text-primary border-primary/20 text-xs py-2 px-3 rounded-xl font-bold">
-                    6-digit code sent to {email}
+              {/* Email Address */}
+              <div className="form-control">
+                <label className="label py-1">
+                  <span className="label-text font-bold text-xs text-base-content/80">
+                    Business Email Address
                   </span>
-                </div>
-
-                <div className="form-control my-1">
-                  <label className="label py-1 justify-center">
-                    <span className="label-text font-bold text-xs text-center">
-                      Enter 6-Digit Verification Code
-                    </span>
-                  </label>
-                  <OtpInput
-                    value={otp}
-                    onChange={setOtp}
-                    disabled={isLoading}
-                    autoFocus={true}
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-base-content/40 absolute left-3.5 top-3.5" />
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    placeholder="chef@restaurant.com"
+                    className="input input-bordered input-md pl-10 w-full focus:input-primary text-sm rounded-xl font-medium"
                   />
                 </div>
+              </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="btn btn-primary w-full mt-1 font-black shadow-lg shadow-primary/25 rounded-xl text-white text-sm"
-                >
-                  {isLoading ? (
-                    <span className="loading loading-spinner loading-sm"></span>
-                  ) : authMode === "register" ? (
-                    "Verify & Complete Setup"
-                  ) : (
-                    "Verify & Open Kitchen"
-                  )}
-                </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn btn-primary w-full mt-2 font-black shadow-lg shadow-primary/25 rounded-xl text-white text-sm py-3.5"
+              >
+                {isLoading ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : authMode === "register" ? (
+                  "Register Kitchen & Get Code"
+                ) : (
+                  "Send One-Time Code"
+                )}
+              </button>
 
-                <button
-                  type="button"
-                  onClick={() => setStep("email")}
-                  className="btn btn-ghost btn-xs text-base-content/60"
-                >
-                  Use a different email
-                </button>
-              </form>
-            )}
+              <p className="text-[11px] text-base-content/50 text-center">
+                🔒 Passwordless login with OTP email verification
+              </p>
+
+              {/* Footer Switcher */}
+              <div className="pt-2 border-t border-base-200 text-center text-xs text-base-content/70">
+                {authMode === "register" ? (
+                  <span>
+                    Already have a vendor account?{" "}
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode("login")}
+                      className="text-primary font-bold hover:underline"
+                    >
+                      Sign in here
+                    </button>
+                  </span>
+                ) : (
+                  <span>
+                    Want to sell your food on Cyglase?{" "}
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode("register")}
+                      className="text-primary font-bold hover:underline"
+                    >
+                      Register your kitchen
+                    </button>
+                  </span>
+                )}
+              </div>
+            </form>
           </div>
         </div>
 

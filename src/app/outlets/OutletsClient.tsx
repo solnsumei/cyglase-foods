@@ -67,6 +67,9 @@ export default function OutletsClient({
   // Filter Outlets
   const filteredVendors = useMemo(() => {
     return vendors.filter((vendor) => {
+      // Exclude vendors without any menu items
+      if (!dishCounts[vendor.id] || dishCounts[vendor.id] === 0) return false;
+
       const q = searchQuery.trim().toLowerCase();
       const matchesQuery =
         !q ||
@@ -85,7 +88,7 @@ export default function OutletsClient({
 
       return matchesQuery && matchesState && matchesArea && matchesOpen;
     });
-  }, [vendors, searchQuery, selectedState, selectedArea, openOnly]);
+  }, [vendors, searchQuery, selectedState, selectedArea, openOnly, dishCounts]);
 
   const handleClearFilters = () => {
     setSearchQuery("");

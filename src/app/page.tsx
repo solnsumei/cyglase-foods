@@ -85,12 +85,20 @@ export default async function HomePage(props: HomePageProps) {
     }
   }
 
+  // Only include active vendors that have at least one available menu item
+  const vendorIdsWithMenu = new Set(
+    (allItems || [])
+      .map((item) => item.vendor_id || item.vendors?.id)
+      .filter(Boolean)
+  );
+  const vendorsWithMenu = (vendors || []).filter((v) => vendorIdsWithMenu.has(v.id));
+
   return (
     <HomeClient
       user={user}
       isVendor={isVendor}
       categories={categories || []}
-      vendors={vendors || []}
+      vendors={vendorsWithMenu}
       initialItems={allItems || []}
       locationStates={locationStates || []}
       initialQuery={initialQuery}
