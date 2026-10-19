@@ -14,11 +14,23 @@ export default async function VendorOrdersPage() {
 
   const supabase = createAdminClient();
 
-  const { data: orders } = await supabase
-    .from("orders")
-    .select("*, order_items(*)")
-    .eq("vendor_id", vendor.id)
-    .order("created_at", { ascending: false });
+  const [ordersRes, dishesRes] = await Promise.all([
+    supabase
+      .from("orders")
+      .select("*, order_items(*)")
+      .eq("vendor_id", vendor.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("menu_items")
+      .select("id", { count: "exact", head: true })
+      .eq("vendor_id", vendor.id),
+  ]);
 
-  return <VendorOrdersClient initialOrders={orders || []} />;
+  return (
+    <VendorOrdersClient
+      initialOrders={ordersRes.data || []}
+      vendor={vendor}
+      dishCount={dishesRes.count ?? 0}
+    />
+  );
 }

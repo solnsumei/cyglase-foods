@@ -238,6 +238,7 @@ export default function OutletsClient({
             {filteredVendors.map((vendor, index) => {
               const dishCount = dishCounts[vendor.id] || 0;
               const vendorState = vendor.state || "Lagos";
+              const vStatus = getVendorLiveStatus(vendor);
 
               return (
                 <div
@@ -246,45 +247,35 @@ export default function OutletsClient({
                 >
                   {/* Outlet Banner Image */}
                   <div className="relative h-36 w-full bg-base-300 overflow-hidden">
-                    {vendor.banner_url ? (
-                      <Image
-                        src={vendor.banner_url}
-                        alt={vendor.business_name}
-                        fill
-                        priority={index < 2}
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-linear-to-r from-primary/15 via-base-200 to-secondary/15 flex items-center justify-center text-primary/30">
-                        <Store className="w-14 h-14 stroke-[1.2]" />
-                      </div>
-                    )}
+                    <Image
+                      src={vendor.banner_url || "/images/cuisines/jollof_party_dish.jpg"}
+                      alt={vendor.business_name}
+                      fill
+                      priority={index < 2}
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
 
                     {/* Open/Closed Live Badge */}
-                    {(() => {
-                      const vStatus = getVendorLiveStatus(vendor);
-                      return (
-                        <div className="absolute top-3 right-3">
-                          <span
-                            className={`badge badge-sm text-[10px] font-bold text-white shadow-xs ${
-                              vStatus.status === "accepting"
-                                ? "badge-success"
-                                : vStatus.status === "paused"
-                                ? "badge-warning"
-                                : "badge-neutral"
-                            }`}
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-white mr-1"></span>
-                            {vStatus.status === "accepting"
-                              ? "Open Now"
-                              : vStatus.status === "paused"
-                              ? "Paused"
-                              : "Closed"}
-                          </span>
-                        </div>
-                      );
-                    })()}
+                    <div className="absolute top-3 right-3">
+                      <span
+                        className={`badge badge-sm text-[10px] font-bold text-white shadow-xs ${
+                          vStatus.status === "accepting"
+                            ? "badge-success"
+                            : vStatus.status === "paused"
+                            ? "badge-warning"
+                            : "badge-neutral"
+                        }`}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-white mr-1"></span>
+                        {vStatus.status === "accepting"
+                          ? "Open Now"
+                          : vStatus.status === "paused"
+                          ? "Paused"
+                          : "Closed"}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Outlet Details */}
@@ -344,9 +335,9 @@ export default function OutletsClient({
                           <span>{dishCount} {dishCount === 1 ? "dish" : "dishes"} available</span>
                         </div>
                         <div className="flex items-center gap-1 mt-0.5">
-                          <Clock className="w-3 h-3" />
-                          <span>
-                            {vendor.opening_time.slice(0, 5)} - {vendor.closing_time.slice(0, 5)}
+                          <Clock className="w-3 h-3 text-base-content/50 shrink-0" />
+                          <span className="font-medium truncate max-w-[170px]">
+                            {vStatus.displayHours.displayText}
                           </span>
                         </div>
                       </div>

@@ -30,6 +30,12 @@ import { useRouter } from "next/navigation";
 import ConfirmModal from "@/components/ConfirmModal";
 import type { Database } from "@/types/database.types";
 import type { StateRow } from "@/lib/locations";
+import {
+  parseDaySchedules,
+  formatDaySchedules,
+  DaySchedule,
+  DayOfWeek,
+} from "@/lib/vendorStatus";
 
 type Vendor = Database["public"]["Tables"]["vendors"]["Row"];
 
@@ -165,12 +171,37 @@ export default function VendorSettingsClient({
   }, [locations, state]);
 
   // Schedule
-  const [openingTime, setOpeningTime] = useState(
-    vendor.opening_time ? vendor.opening_time.slice(0, 5) : "08:00"
+  const [daySchedules, setDaySchedules] = useState<DaySchedule[]>(() =>
+    parseDaySchedules(vendor.opening_days, vendor.opening_time, vendor.closing_time)
   );
-  const [closingTime, setClosingTime] = useState(
-    vendor.closing_time ? vendor.closing_time.slice(0, 5) : "22:00"
-  );
+
+  const handleToggleDay = (day: DayOfWeek) => {
+    setDaySchedules((prev) =>
+      prev.map((s) => (s.day === day ? { ...s, isOpen: !s.isOpen } : s))
+    );
+  };
+
+  const handleDayTimeChange = (
+    day: DayOfWeek,
+    field: "opensAt" | "closesAt",
+    value: string
+  ) => {
+    setDaySchedules((prev) =>
+      prev.map((s) => (s.day === day ? { ...s, [field]: value } : s))
+    );
+  };
+
+  const handleApplyTimeToAll = (sourceDay: DayOfWeek) => {
+    const source = daySchedules.find((s) => s.day === sourceDay);
+    if (!source) return;
+    setDaySchedules((prev) =>
+      prev.map((s) => ({
+        ...s,
+        opensAt: source.opensAt,
+        closesAt: source.closesAt,
+      }))
+    );
+  };
 
   // Bank details for manual customer transfer
   const [bankName, setBankName] = useState(vendor.bank_name || "");
@@ -183,6 +214,10 @@ export default function VendorSettingsClient({
     setSuccessMessage(null);
     setErrorMessage(null);
 
+    const firstOpenDay = daySchedules.find((s) => s.isOpen) || daySchedules[0];
+    const fallbackOpen = firstOpenDay?.opensAt || "08:00";
+    const fallbackClose = firstOpenDay?.closesAt || "22:00";
+
     const formData = new FormData();
     formData.append("vendor_id", vendor.id);
     formData.append("business_name", businessName);
@@ -194,8 +229,12 @@ export default function VendorSettingsClient({
     formData.append("city_area", cityArea);
     formData.append("address", address);
     formData.append("landmark", landmark);
-    formData.append("opening_time", `${openingTime}:00`);
-    formData.append("closing_time", `${closingTime}:00`);
+    formData.append("opening_time", `${fallbackOpen}:00`);
+    formData.append("closing_time", `${fallbackClose}:00`);
+    formData.append(
+      "opening_days",
+      JSON.stringify(formatDaySchedules(daySchedules))
+    );
     formData.append("bank_name", bankName);
     formData.append("account_number", accountNumber);
     formData.append("account_name", accountName);
@@ -442,46 +481,85 @@ export default function VendorSettingsClient({
             </div>
           </div>
 
-          {/* Section 2: Kitchen Working Hours */}
+          {/* Section 2: Kitchen Working Hours & Days */}
           <div className="card bg-base-100 shadow-sm border border-base-200 rounded-2xl p-4 sm:p-5">
-            <div className="flex items-center gap-2 pb-3 border-b border-base-200 mb-4">
-              <div className="w-8 h-8 rounded-full bg-secondary/10 text-secondary flex items-center justify-center">
-                <Clock className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="font-black text-sm text-base-content">
-                  Kitchen Working Hours
-                </h2>
-                <p className="text-[11px] text-base-content/60">
-                  Times when your store accepts incoming food orders
-                </p>
+            <div className="flex items-center justify-between pb-3 border-b border-base-200 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-secondary/10 text-secondary flex items-center justify-center">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="font-black text-sm text-base-content">
+                    Kitchen Working Hours
+                  </h2>
+                  <p className="text-[11px] text-base-content/60">
+                    Set different hours by day or mark days as closed
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label text-xs font-bold text-base-content/80 pb-1">
-                  Opens At
-                </label>
-                <input
-                  type="time"
-                  value={openingTime}
-                  onChange={(e) => setOpeningTime(e.target.value)}
-                  className="input input-bordered w-full rounded-xl text-sm font-semibold"
-                />
-              </div>
+            <div className="space-y-2">
+              {daySchedules.map((schedule) => (
+                <div
+                  key={schedule.day}
+                  className={`p-2.5 sm:p-3 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${schedule.isOpen
+                      ? "bg-base-100 border-base-200"
+                      : "bg-base-200/50 border-base-200/60 opacity-80"
+                    }`}
+                >
+                  <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:w-44 shrink-0">
+                    <span className="font-bold text-xs sm:text-sm text-base-content w-20 sm:w-22">
+                      {schedule.day}
+                    </span>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={schedule.isOpen}
+                        onChange={() => handleToggleDay(schedule.day)}
+                        className="toggle toggle-sm toggle-success"
+                      />
+                      <span
+                        className={`text-xs font-bold w-12 ${schedule.isOpen ? "text-success" : "text-base-content/40"
+                          }`}
+                      >
+                        {schedule.isOpen ? "Open" : "Closed"}
+                      </span>
+                    </label>
+                  </div>
 
-              <div>
-                <label className="label text-xs font-bold text-base-content/80 pb-1">
-                  Closes At
-                </label>
-                <input
-                  type="time"
-                  value={closingTime}
-                  onChange={(e) => setClosingTime(e.target.value)}
-                  className="input input-bordered w-full rounded-xl text-sm font-semibold"
-                />
-              </div>
+                  {schedule.isOpen ? (
+                    <div className="flex items-center gap-2 flex-1 justify-end flex-wrap sm:flex-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] text-base-content/60 font-medium">From</span>
+                        <input
+                          type="time"
+                          value={schedule.opensAt}
+                          onChange={(e) =>
+                            handleDayTimeChange(schedule.day, "opensAt", e.target.value)
+                          }
+                          className="input input-bordered input-xs sm:input-sm rounded-lg font-semibold w-24"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] text-base-content/60 font-medium">To</span>
+                        <input
+                          type="time"
+                          value={schedule.closesAt}
+                          onChange={(e) =>
+                            handleDayTimeChange(schedule.day, "closesAt", e.target.value)
+                          }
+                          className="input input-bordered input-xs sm:input-sm rounded-lg font-semibold w-24"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-right flex-1 text-xs text-base-content/40 italic py-0.5">
+                      Closed all day
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>

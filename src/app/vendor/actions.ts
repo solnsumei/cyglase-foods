@@ -515,6 +515,16 @@ export async function updateVendorSettings(formData: FormData) {
     }
   }
 
+  const rawOpeningDays = formData.get("opening_days") as string | null;
+  let opening_days: string[] | undefined;
+  if (rawOpeningDays) {
+    try {
+      opening_days = JSON.parse(rawOpeningDays);
+    } catch {
+      // ignore parse error
+    }
+  }
+
   const { error } = await adminClient
     .from("vendors")
     .update({
@@ -529,6 +539,7 @@ export async function updateVendorSettings(formData: FormData) {
       address,
       opening_time,
       closing_time,
+      ...(opening_days ? { opening_days } : {}),
       bank_name,
       account_number,
       account_name,

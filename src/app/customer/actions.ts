@@ -194,7 +194,7 @@ export async function placeCustomerOrder({
   // Fetch vendor info to get pickup address and verify operating hours
   const { data: vendor } = await adminClient
     .from("vendors")
-    .select("user_id, address, city_area, business_name, is_open, opening_time, closing_time")
+    .select("user_id, address, city_area, business_name, is_open, opening_time, closing_time, opening_days")
     .eq("id", vendorId)
     .single();
 

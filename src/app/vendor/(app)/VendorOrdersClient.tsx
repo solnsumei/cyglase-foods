@@ -23,6 +23,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
+  Sparkles,
+  CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
 import ConfirmModal from "@/components/ConfirmModal";
 import type { Database, OrderStatus } from "@/types/database.types";
@@ -31,12 +34,92 @@ type Order = Database["public"]["Tables"]["orders"]["Row"] & {
   order_items?: Database["public"]["Tables"]["order_items"]["Row"][];
 };
 
+type Vendor = Database["public"]["Tables"]["vendors"]["Row"];
+
 export default function VendorOrdersClient({
   initialOrders,
+  vendor,
+  dishCount = 0,
 }: {
   initialOrders: Order[];
+  vendor?: Vendor;
+  dishCount?: number;
 }) {
   const [orders, setOrders] = useState(initialOrders);
+
+  // Compute Onboarding completeness
+  const onboardingSteps = useMemo(() => {
+    if (!vendor) return [];
+
+    // 1. Bank account for customer transfers
+    const hasBank = Boolean(
+      vendor.bank_name && vendor.account_number && vendor.account_name
+    );
+
+    // 2. At least one dish on the menu
+    const hasDishes = (dishCount || 0) > 0;
+
+    // 3. Street address & landmark
+    // On signup, address defaults to "${city_area}, ${city}" and landmark is null.
+    // The vendor must provide an actual street address and landmark to complete this.
+    const isDefaultAddress =
+      vendor.address === `${vendor.city_area}, ${vendor.state}` ||
+      vendor.address === `${vendor.city_area}, ${vendor.city}`;
+    const hasAddress = Boolean(
+      vendor.address &&
+      !isDefaultAddress &&
+      vendor.landmark &&
+      vendor.landmark.trim().length > 0
+    );
+
+    // 4. Operating hours & days
+    // On signup, opening_days defaults to standard raw array ['Monday','Tuesday',...] without timestamps.
+    // The vendor must confirm / customize their schedule in settings to complete this.
+    const hasHours = Boolean(
+      vendor.opening_days &&
+      vendor.opening_days.length > 0 &&
+      vendor.opening_days.some((d) => d.includes(":"))
+    );
+
+    return [
+      {
+        id: "bank",
+        title: "Bank Account for Customer Transfers",
+        desc: "Customers transfer money directly to your account to pay for their orders.",
+        isDone: hasBank,
+        href: "/vendor/settings",
+        actionText: "Add Bank Account",
+      },
+      {
+        id: "dishes",
+        title: "Add Food Dishes to Menu",
+        desc: "Add your delicious dishes with photos, prices, and prep times.",
+        isDone: hasDishes,
+        href: "/vendor/menu/new",
+        actionText: "Add First Dish",
+      },
+      {
+        id: "address",
+        title: "Kitchen Pickup Address & Landmark",
+        desc: "Specify exact street address and landmark where dispatch riders pick up orders.",
+        isDone: hasAddress,
+        href: "/vendor/settings",
+        actionText: "Set Pickup Address",
+      },
+      {
+        id: "hours",
+        title: "Confirm Operating Hours & Days",
+        desc: "Defaulted to 8:00 AM - 10:00 PM. Review or customize your schedule & closed days.",
+        isDone: hasHours,
+        href: "/vendor/settings",
+        actionText: "Review Hours",
+      },
+    ];
+  }, [vendor, dishCount]);
+
+  const completedStepsCount = onboardingSteps.filter((s) => s.isDone).length;
+  const isFullyOnboarded =
+    onboardingSteps.length > 0 && completedStepsCount === onboardingSteps.length;
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
   const [rejectingOrderId, setRejectingOrderId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -188,6 +271,97 @@ export default function VendorOrdersClient({
         </div>
       </div>
 
+      {/* Kitchen Onboarding Setup Reminder Card */}
+      {vendor && !isFullyOnboarded && (
+        <div className="card bg-linear-to-br from-base-100 via-base-100 to-primary/5 border-2 border-primary/25 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-base-200">
+            <div className="flex items-center gap-2.5">
+              <div>
+                <h2 className="font-black text-sm sm:text-base text-base-content flex items-center gap-2 flex-wrap">
+                  {orders.length === 0
+                    ? `👋 Welcome, ${vendor.business_name}! Complete Your Setup`
+                    : "Complete Your Kitchen Onboarding"}
+                  <span className="badge badge-primary badge-xs sm:badge-sm font-bold text-white">
+                    {completedStepsCount} of {onboardingSteps.length} Done
+                  </span>
+                </h2>
+                <p className="text-xs text-base-content/65 mt-0.5">
+                  Your store has default 8:00 AM - 10:00 PM hours. Complete the steps below to connect your bank account, dishes, and location to accept orders.
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href="/vendor/settings"
+              className="btn btn-primary btn-xs sm:btn-sm rounded-xl text-white font-bold gap-1 self-start sm:self-center shadow-xs shrink-0"
+            >
+              <span>Kitchen Settings</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="w-full bg-base-200 rounded-full h-1.5 mt-3 overflow-hidden">
+            <div
+              className="bg-primary h-full transition-all duration-500 rounded-full"
+              style={{
+                width: `${(completedStepsCount / onboardingSteps.length) * 100}%`,
+              }}
+            />
+          </div>
+
+          {/* Steps List */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3 pt-1">
+            {onboardingSteps.map((step) => (
+              <div
+                key={step.id}
+                className={`p-3 rounded-xl border flex items-center justify-between gap-2.5 transition-all ${step.isDone
+                    ? "bg-base-200/30 border-base-200/60"
+                    : "bg-base-100 border-amber-300/80 dark:border-amber-700/60 shadow-xs"
+                  }`}
+              >
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <div className="mt-0.5 shrink-0">
+                    {step.isDone ? (
+                      <CheckCircle2 className="w-4 h-4 text-success" />
+                    ) : (
+                      <div className="w-4 h-4 rounded-full border-2 border-amber-500 flex items-center justify-center" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p
+                      className={`text-xs font-bold truncate ${step.isDone
+                          ? "text-base-content/60 line-through"
+                          : "text-base-content"
+                        }`}
+                    >
+                      {step.title}
+                    </p>
+                    <p className="text-[11px] text-base-content/50 line-clamp-1 mt-0.5">
+                      {step.desc}
+                    </p>
+                  </div>
+                </div>
+
+                {!step.isDone ? (
+                  <Link
+                    href={step.href}
+                    className="btn btn-xs btn-outline btn-primary rounded-lg font-bold shrink-0 text-[11px] gap-1"
+                  >
+                    <span>{step.actionText}</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
+                ) : (
+                  <span className="badge badge-ghost badge-xs text-[10px] text-success font-bold shrink-0">
+                    Done
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Operational Order Stats (Compact Height):
           - Desktop (md:): All 3 cards side-by-side in one compact row
           - Mobile (< md): Action Needed + Fulfilled 2 in a row, Cooking / Transit full width on its own row
@@ -306,17 +480,16 @@ export default function VendorOrdersClient({
                         ₦{Number(order.total_amount).toLocaleString()}
                       </div>
                       <span
-                        className={`badge badge-xs font-bold uppercase text-[9px] mt-0.5 ${
-                          order.status === "payment_uploaded"
+                        className={`badge badge-xs font-bold uppercase text-[9px] mt-0.5 ${order.status === "payment_uploaded"
                             ? "badge-warning text-white font-black animate-pulse"
                             : order.status === "preparing"
-                            ? "badge-primary"
-                            : order.status === "delivered"
-                            ? "badge-success text-white"
-                            : order.status === "pending_acceptance"
-                            ? "badge-accent text-black font-black"
-                            : "badge-ghost"
-                        }`}
+                              ? "badge-primary"
+                              : order.status === "delivered"
+                                ? "badge-success text-white"
+                                : order.status === "pending_acceptance"
+                                  ? "badge-accent text-black font-black"
+                                  : "badge-ghost"
+                          }`}
                       >
                         {order.status.replace(/_/g, " ")}
                       </span>

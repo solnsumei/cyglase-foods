@@ -23,10 +23,15 @@ import {
   Mail,
   User,
   Phone,
+  Camera,
 } from "lucide-react";
 import type { Database } from "@/types/database.types";
 import { placeCustomerOrder, CartItem } from "../../customer/actions";
-import { getVendorLiveStatus } from "@/lib/vendorStatus";
+import {
+  getVendorLiveStatus,
+  formatTime12Hour,
+  parseDaySchedules,
+} from "@/lib/vendorStatus";
 
 type Vendor = Database["public"]["Tables"]["vendors"]["Row"];
 type MenuItem = Database["public"]["Tables"]["menu_items"]["Row"] & {
@@ -159,24 +164,36 @@ export default function StorefrontClient({
     }
   };
 
-  // Fallback banner image if vendor hasn't uploaded one
-  const bannerImage =
-    vendor.banner_url || "/images/cuisines/jollof_party_dish.jpg";
+  // Check if current user is the owner vendor of this storefront
+  const isOwner = Boolean(currentUser && currentUser.id === vendor.user_id);
 
   return (
     <div className="min-h-screen bg-base-200/40 pb-24">
       {/* Top Navbar */}
       <header className="sticky top-0 z-30 bg-base-100/90 backdrop-blur-md border-b border-base-200 px-4 py-3 sm:px-6">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link
-            href="/"
-            className="btn btn-ghost btn-xs sm:btn-sm gap-1 text-base-content/70 hover:text-primary rounded-xl"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="font-semibold text-xs">Back</span>
-          </Link>
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/"
+              className="btn btn-ghost btn-xs sm:btn-sm gap-1 text-base-content/70 hover:text-primary rounded-xl"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="font-semibold text-xs">Back</span>
+            </Link>
 
-          <span className="font-black text-sm sm:text-base text-base-content truncate max-w-[200px] sm:max-w-md">
+            {isOwner && (
+              <Link
+                href="/vendor"
+                className="badge badge-primary badge-sm font-bold gap-1 py-2 px-2.5 hover:opacity-90 transition-opacity"
+              >
+                <Store className="w-3 h-3" />
+                <span className="hidden sm:inline">Owner Dashboard</span>
+                <span className="sm:hidden">Owner</span>
+              </Link>
+            )}
+          </div>
+
+          <span className="font-black text-sm sm:text-base text-base-content truncate max-w-[180px] sm:max-w-md">
             {vendor.business_name}
           </span>
 
@@ -200,14 +217,44 @@ export default function StorefrontClient({
         {/* Vendor Header Card with Cover Banner & Logo */}
         <div className="card bg-base-100 shadow-sm border border-base-200 rounded-3xl overflow-hidden">
           {/* Store Banner Image */}
-          <div className="relative h-44 sm:h-56 md:h-64 lg:h-72 w-full bg-base-300">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={bannerImage}
-              alt={vendor.business_name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+          <div className="relative h-44 sm:h-56 md:h-64 lg:h-72 w-full bg-base-300 overflow-hidden">
+            {vendor.banner_url ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={vendor.banner_url}
+                  alt={vendor.business_name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+              </>
+            ) : isOwner ? (
+              /* When owner is viewing their own storefront, show the empty state */
+              <div className="w-full h-full bg-linear-to-br from-base-200 via-base-300/80 to-base-200 flex flex-col items-center justify-center gap-2 text-base-content/50 p-4 select-none">
+                <div className="w-12 h-12 rounded-2xl bg-base-100 flex items-center justify-center border border-base-300 shadow-xs text-base-content/40">
+                  <Camera className="w-6 h-6" />
+                </div>
+                <div className="text-center max-w-sm">
+                  <p className="text-xs sm:text-sm font-bold text-base-content/80">
+                    No Storefront Banner Uploaded
+                  </p>
+                  <p className="text-[11px] text-base-content/50 mt-0.5">
+                    Customers browsing your storefront see the default food banner.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* When normal customers browse, show default banner */
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/cuisines/jollof_party_dish.jpg"
+                  alt={vendor.business_name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+              </>
+            )}
           </div>
 
           <div className="p-5 sm:p-6 relative pt-0">
@@ -269,13 +316,52 @@ export default function StorefrontClient({
                 <span>{vendor.address || `${vendor.city_area}, ${vendor.city}`}</span>
               </p>
 
-              <div className="flex items-center gap-3 text-xs text-base-content/60 mt-1.5">
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>
-                    {vendor.opening_time.slice(0, 5)} - {vendor.closing_time.slice(0, 5)}
+              <div className="flex items-center gap-3 text-xs text-base-content/60 mt-1.5 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span className="font-semibold text-base-content/80">
+                    {vendorStatus.displayHours.displayText}
                   </span>
                 </div>
+
+                <details className="dropdown">
+                  <summary className="cursor-pointer text-[11px] font-bold text-primary hover:underline list-none">
+                    View weekly hours
+                  </summary>
+                  <div className="dropdown-content z-20 p-3 shadow-xl bg-base-100 rounded-2xl w-64 border border-base-200 mt-1">
+                    <p className="font-bold text-xs text-base-content mb-2 border-b border-base-200 pb-1.5">
+                      Weekly Kitchen Hours
+                    </p>
+                    <div className="space-y-1.5">
+                      {parseDaySchedules(
+                        vendor.opening_days,
+                        vendor.opening_time,
+                        vendor.closing_time
+                      ).map((sch) => (
+                        <div
+                          key={sch.day}
+                          className="flex items-center justify-between text-xs"
+                        >
+                          <span
+                            className={`font-semibold ${
+                              sch.day === vendorStatus.todaySchedule?.day
+                                ? "text-primary font-black"
+                                : "text-base-content/70"
+                            }`}
+                          >
+                            {sch.day}
+                            {sch.day === vendorStatus.todaySchedule?.day ? " (Today)" : ""}
+                          </span>
+                          <span className="text-[11px] text-base-content/60">
+                            {sch.isOpen
+                              ? `${formatTime12Hour(sch.opensAt)} - ${formatTime12Hour(sch.closesAt)}`
+                              : "Closed"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </details>
               </div>
 
               {!vendorStatus.isAcceptingOrders && (
@@ -362,10 +448,10 @@ export default function StorefrontClient({
               return (
                 <div
                   key={item.id}
-                  className="card bg-base-100 shadow-sm border border-base-200 rounded-2xl p-4 flex flex-row items-center justify-between gap-3 hover:border-primary/30 transition-all"
+                  className="card bg-base-100 shadow-sm border border-base-200 rounded-2xl p-4 flex flex-row items-start gap-3 sm:gap-4 hover:border-primary/30 transition-all"
                 >
                   {item.image_url && (
-                    <div className="w-18 h-18 sm:w-22 sm:h-22 rounded-2xl overflow-hidden shrink-0 bg-base-200 border border-base-200/80">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 bg-base-200 border border-base-200/80">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={item.image_url}
@@ -375,62 +461,68 @@ export default function StorefrontClient({
                     </div>
                   )}
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                      <span className="badge badge-xs badge-ghost text-[10px] font-medium bg-base-200">
-                        {item.categories?.name || "Dish"}
-                      </span>
-                      {item.preparation_time_minutes ? (
-                        <span className="badge badge-xs badge-ghost text-[10px] font-medium bg-base-200 text-base-content/70 gap-1">
-                          <Clock className="w-2.5 h-2.5 text-primary" />
-                          ~{item.preparation_time_minutes} mins
+                  <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch">
+                    <div>
+                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                        <span className="badge badge-xs badge-ghost text-[10px] font-medium bg-base-200">
+                          {item.categories?.name || "Dish"}
                         </span>
-                      ) : null}
-                    </div>
-
-                    <h3 className="font-bold text-base text-base-content truncate">
-                      {item.name}
-                    </h3>
-                    {item.description && (
-                      <p className="text-xs text-base-content/65 line-clamp-2 mt-0.5 leading-relaxed">
-                        {item.description}
-                      </p>
-                    )}
-                    <div className="mt-2 text-base font-black text-primary">
-                      ₦{Number(item.price).toLocaleString()}
-                    </div>
-                  </div>
-
-                  {/* Quantity / Add to Cart Action */}
-                  <div className="shrink-0 flex items-center">
-                    {inCartItem ? (
-                      <div className="flex items-center gap-1.5 bg-primary/10 rounded-xl p-1 border border-primary/20">
-                        <button
-                          onClick={() => removeFromCart(item.id)}
-                          className="btn btn-ghost btn-xs btn-square text-primary hover:bg-primary/20 rounded-lg"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="text-xs font-black text-primary px-1.5">
-                          {inCartItem.quantity}
-                        </span>
-                        <button
-                          onClick={() => addToCart(item)}
-                          className="btn btn-ghost btn-xs btn-square text-primary hover:bg-primary/20 rounded-lg"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
+                        {item.preparation_time_minutes ? (
+                          <span className="badge badge-xs badge-ghost text-[10px] font-medium bg-base-200 text-base-content/70 gap-1">
+                            <Clock className="w-2.5 h-2.5 text-primary" />
+                            ~{item.preparation_time_minutes} mins
+                          </span>
+                        ) : null}
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => addToCart(item)}
-                        disabled={!vendorStatus.isAcceptingOrders || !item.is_available}
-                        className="btn btn-primary btn-sm rounded-xl font-bold text-white shadow-xs gap-1"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Add</span>
-                      </button>
-                    )}
+
+                      <h3 className="font-bold text-sm sm:text-base text-base-content">
+                        {item.name}
+                      </h3>
+                      {item.description && (
+                        <p className="text-xs text-base-content/65 mt-1 leading-relaxed">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Bottom Row: Price and Add / Quantity Action */}
+                    <div className="mt-3 pt-2 border-t border-base-200/60 flex items-center justify-between gap-2">
+                      <div className="text-sm sm:text-base font-black text-primary">
+                        ₦{Number(item.price).toLocaleString()}
+                      </div>
+
+                      {/* Quantity / Add to Cart Action */}
+                      <div className="shrink-0 flex items-center">
+                        {inCartItem ? (
+                          <div className="flex items-center gap-1.5 bg-primary/10 rounded-xl p-1 border border-primary/20">
+                            <button
+                              onClick={() => removeFromCart(item.id)}
+                              className="btn btn-ghost btn-xs btn-square text-primary hover:bg-primary/20 rounded-lg"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="text-xs font-black text-primary px-1.5">
+                              {inCartItem.quantity}
+                            </span>
+                            <button
+                              onClick={() => addToCart(item)}
+                              className="btn btn-ghost btn-xs btn-square text-primary hover:bg-primary/20 rounded-lg"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => addToCart(item)}
+                            disabled={!vendorStatus.isAcceptingOrders || !item.is_available}
+                            className="btn btn-primary btn-sm rounded-xl font-bold text-white shadow-xs gap-1"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Add</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
