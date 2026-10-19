@@ -69,19 +69,19 @@ interface Props {
 
 const CUISINE_SLIDES = [
   {
-    title: "Smoky Party Jollof & Dodo",
-    tagline: "Authentic Nigerian wood-fire flavors with tender grilled chicken",
+    title: "Party Jollof & Dodo",
+    tagline: "Authentic Nigerian flavors with tender grilled chicken",
     image: "/images/cuisines/jollof_party_dish.jpg",
     categorySlug: "meals",
   },
   {
-    title: "Rich Egusi & Smooth Pounded Yam",
-    tagline: "Piping hot soup packed with stockfish, meat & leafy greens",
+    title: "Freshly made Egusi & Pounded Yam",
+    tagline: "Soup packed with stockfish, meat & leafy greens",
     image: "/images/cuisines/egusi_pounded_yam.jpg",
     categorySlug: "swallows",
   },
   {
-    title: "Sizzling Street Suya & Peppers",
+    title: "Street Suya & Peppers",
     tagline: "Thinly-sliced beef skewers spiced with fiery Kano yaji",
     image: "/images/cuisines/nigerian_suya_meat.jpg",
     categorySlug: "proteins",
@@ -93,7 +93,7 @@ const CUISINE_SLIDES = [
     categorySlug: "drinks",
   },
   {
-    title: "Warm Golden Puff-Puff & Meat Pies",
+    title: "Puff-Puff & Meat Pies",
     tagline: "Crisp, doughy delights freshly fried every morning",
     image: "/images/cuisines/puff_puff_meatpie.jpg",
     categorySlug: "desserts",
@@ -127,6 +127,18 @@ export default function HomeClient({
     initialState !== "all" || initialArea !== "all"
   );
   const [activeSlide, setActiveSlide] = useState(0);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+
+  // Auto-advance hero cuisine carousel
+  useEffect(() => {
+    if (isCarouselPaused) return;
+
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % CUISINE_SLIDES.length);
+    }, 4500);
+
+    return () => clearInterval(timer);
+  }, [isCarouselPaused]);
 
   // Pagination State for Search Results & Home Dishes
   const SEARCH_DISHES_PER_PAGE = 12;
@@ -414,11 +426,10 @@ export default function HomeClient({
             <button
               type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className={`btn h-14 px-4 rounded-2xl font-bold gap-2 shrink-0 border transition-all ${
-                showFilters || activeFilterCount > 0
-                  ? "btn-primary text-white shadow-md shadow-primary/20"
-                  : "btn-ghost bg-base-100 border-base-300 hover:bg-base-200 text-base-content/80 shadow-xs"
-              }`}
+              className={`btn h-14 px-4 rounded-2xl font-bold gap-2 shrink-0 border transition-all ${showFilters || activeFilterCount > 0
+                ? "btn-primary text-white shadow-md shadow-primary/20"
+                : "btn-ghost bg-base-100 border-base-300 hover:bg-base-200 text-base-content/80 shadow-xs"
+                }`}
             >
               <SlidersHorizontal className="w-4 h-4" />
               <span className="hidden sm:inline">Filters</span>
@@ -586,11 +597,10 @@ export default function HomeClient({
           <div className="flex items-center gap-2 overflow-x-auto pb-1.5 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
             <button
               onClick={() => setSelectedCategory("all")}
-              className={`btn btn-xs sm:btn-sm rounded-full whitespace-nowrap px-3.5 font-bold transition-all ${
-                selectedCategory === "all"
-                  ? "btn-primary text-white shadow-sm"
-                  : "btn-ghost bg-base-100 hover:bg-base-200 border border-base-200 text-base-content/70"
-              }`}
+              className={`btn btn-xs sm:btn-sm rounded-full whitespace-nowrap px-3.5 font-bold transition-all ${selectedCategory === "all"
+                ? "btn-primary text-white shadow-sm"
+                : "btn-ghost bg-base-100 hover:bg-base-200 border border-base-200 text-base-content/70"
+                }`}
             >
               All Foods
             </button>
@@ -598,11 +608,10 @@ export default function HomeClient({
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`btn btn-xs sm:btn-sm rounded-full whitespace-nowrap px-3.5 font-semibold transition-all ${
-                  selectedCategory === cat.id
-                    ? "btn-primary text-white shadow-sm"
-                    : "btn-ghost bg-base-100 hover:bg-base-200 border border-base-200 text-base-content/70"
-                }`}
+                className={`btn btn-xs sm:btn-sm rounded-full whitespace-nowrap px-3.5 font-semibold transition-all ${selectedCategory === cat.id
+                  ? "btn-primary text-white shadow-sm"
+                  : "btn-ghost bg-base-100 hover:bg-base-200 border border-base-200 text-base-content/70"
+                  }`}
               >
                 {cat.name}
               </button>
@@ -674,112 +683,112 @@ export default function HomeClient({
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {paginatedSearchDishes.map((item) => (
-                    <div
-                      key={item.id}
-                      className="card bg-base-100 shadow-sm border border-base-200 rounded-2xl overflow-hidden hover:shadow-md hover:border-primary/40 transition-all flex flex-col justify-between"
-                    >
-                      <div className="p-4 flex gap-3">
-                        {item.image_url ? (
-                          <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative bg-base-200">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={item.image_url}
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-20 h-20 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold">
-                            <UtensilsCrossed className="w-7 h-7" />
-                          </div>
-                        )}
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                            <span className="badge badge-xs badge-ghost text-[10px] font-medium bg-base-200">
-                              {item.categories?.name || "Dish"}
-                            </span>
-                            {item.vendors?.city_area && (
-                              <span className="text-[10px] text-base-content/50">
-                                • {item.vendors.city_area}
-                              </span>
-                            )}
-                          </div>
-
-                          <h3 className="font-bold text-xs sm:text-[13px] text-base-content truncate">
-                            {item.name}
-                          </h3>
-
-                          {item.description && (
-                            <p className="text-[11px] text-base-content/65 line-clamp-2 mt-0.5 leading-relaxed">
-                              {item.description}
-                            </p>
+                      <div
+                        key={item.id}
+                        className="card bg-base-100 shadow-sm border border-base-200 rounded-2xl overflow-hidden hover:shadow-md hover:border-primary/40 transition-all flex flex-col justify-between"
+                      >
+                        <div className="p-4 flex gap-3">
+                          {item.image_url ? (
+                            <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative bg-base-200">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={item.image_url}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-20 h-20 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold">
+                              <UtensilsCrossed className="w-7 h-7" />
+                            </div>
                           )}
 
-                          <div className="mt-2 text-sm font-black text-primary">
-                            ₦{Number(item.price).toLocaleString()}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                              <span className="badge badge-xs badge-ghost text-[10px] font-medium bg-base-200">
+                                {item.categories?.name || "Dish"}
+                              </span>
+                              {item.vendors?.city_area && (
+                                <span className="text-[10px] text-base-content/50">
+                                  • {item.vendors.city_area}
+                                </span>
+                              )}
+                            </div>
+
+                            <h3 className="font-bold text-xs sm:text-[13px] text-base-content truncate">
+                              {item.name}
+                            </h3>
+
+                            {item.description && (
+                              <p className="text-[11px] text-base-content/65 line-clamp-2 mt-0.5 leading-relaxed">
+                                {item.description}
+                              </p>
+                            )}
+
+                            <div className="mt-2 text-sm font-black text-primary">
+                              ₦{Number(item.price).toLocaleString()}
+                            </div>
                           </div>
                         </div>
+
+                        <div className="bg-base-200/40 px-4 py-2 border-t border-base-200 flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-base-content/70 truncate max-w-[150px]">
+                            By {item.vendors?.business_name || "Local Kitchen"}
+                          </span>
+                          <Link
+                            href={`/store/${item.vendors?.slug || ""}`}
+                            className="btn btn-secondary btn-xs rounded-xl text-white font-bold gap-1 shadow-xs"
+                          >
+                            <ShoppingBag className="w-3 h-3" />
+                            Order Now
+                          </Link>
+                        </div>
                       </div>
-
-                      <div className="bg-base-200/40 px-4 py-2 border-t border-base-200 flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-base-content/70 truncate max-w-[150px]">
-                          By {item.vendors?.business_name || "Local Kitchen"}
-                        </span>
-                        <Link
-                          href={`/store/${item.vendors?.slug || ""}`}
-                          className="btn btn-secondary btn-xs rounded-xl text-white font-bold gap-1 shadow-xs"
-                        >
-                          <ShoppingBag className="w-3 h-3" />
-                          Order Now
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Pagination Controls for Search Results */}
-                {totalSearchPages > 1 && (
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3">
-                    <p className="text-xs text-base-content/60">
-                      Showing{" "}
-                      <span className="font-semibold text-base-content">
-                        {(searchPage - 1) * SEARCH_DISHES_PER_PAGE + 1}
-                      </span>{" "}
-                      to{" "}
-                      <span className="font-semibold text-base-content">
-                        {Math.min(searchPage * SEARCH_DISHES_PER_PAGE, filteredDishes.length)}
-                      </span>{" "}
-                      of{" "}
-                      <span className="font-semibold text-base-content">
-                        {filteredDishes.length}
-                      </span>{" "}
-                      matching meals
-                    </p>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setSearchPage((p) => Math.max(1, p - 1))}
-                        disabled={searchPage === 1}
-                        className="btn btn-sm btn-outline border-base-300 rounded-xl gap-1 text-xs"
-                      >
-                        <ChevronLeft className="w-3.5 h-3.5" /> Previous
-                      </button>
-                      <span className="text-xs font-semibold px-2">
-                        Page {searchPage} of {totalSearchPages}
-                      </span>
-                      <button
-                        onClick={() => setSearchPage((p) => Math.min(totalSearchPages, p + 1))}
-                        disabled={searchPage === totalSearchPages}
-                        className="btn btn-sm btn-outline border-base-300 rounded-xl gap-1 text-xs"
-                      >
-                        Next <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    ))}
                   </div>
-                )}
-              </>
-            )}
+
+                  {/* Pagination Controls for Search Results */}
+                  {totalSearchPages > 1 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3">
+                      <p className="text-xs text-base-content/60">
+                        Showing{" "}
+                        <span className="font-semibold text-base-content">
+                          {(searchPage - 1) * SEARCH_DISHES_PER_PAGE + 1}
+                        </span>{" "}
+                        to{" "}
+                        <span className="font-semibold text-base-content">
+                          {Math.min(searchPage * SEARCH_DISHES_PER_PAGE, filteredDishes.length)}
+                        </span>{" "}
+                        of{" "}
+                        <span className="font-semibold text-base-content">
+                          {filteredDishes.length}
+                        </span>{" "}
+                        matching meals
+                      </p>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setSearchPage((p) => Math.max(1, p - 1))}
+                          disabled={searchPage === 1}
+                          className="btn btn-sm btn-outline border-base-300 rounded-xl gap-1 text-xs"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" /> Previous
+                        </button>
+                        <span className="text-xs font-semibold px-2">
+                          Page {searchPage} of {totalSearchPages}
+                        </span>
+                        <button
+                          onClick={() => setSearchPage((p) => Math.min(totalSearchPages, p + 1))}
+                          disabled={searchPage === totalSearchPages}
+                          className="btn btn-sm btn-outline border-base-300 rounded-xl gap-1 text-xs"
+                        >
+                          Next <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </section>
 
             {/* Matched Kitchens */}
@@ -863,7 +872,11 @@ export default function HomeClient({
           /* DEFAULT CURATED HOME PAGE VIEW */
           <div className="space-y-6">
             {/* Hero Nigerian Cuisine Feature Carousel */}
-            <div className="relative overflow-hidden rounded-3xl shadow-lg border border-base-200 bg-base-100">
+            <div
+              className="relative overflow-hidden rounded-3xl shadow-lg border border-base-200 bg-base-100"
+              onMouseEnter={() => setIsCarouselPaused(true)}
+              onMouseLeave={() => setIsCarouselPaused(false)}
+            >
               <div className="relative h-56 sm:h-72 w-full">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -888,11 +901,10 @@ export default function HomeClient({
                       <button
                         key={idx}
                         onClick={() => setActiveSlide(idx)}
-                        className={`h-1.5 rounded-full transition-all ${
-                          activeSlide === idx
-                            ? "w-6 bg-warning"
-                            : "w-2 bg-white/40 hover:bg-white/70"
-                        }`}
+                        className={`h-1.5 rounded-full transition-all ${activeSlide === idx
+                          ? "w-6 bg-warning"
+                          : "w-2 bg-white/40 hover:bg-white/70"
+                          }`}
                         aria-label={`Slide ${idx + 1}`}
                       />
                     ))}
@@ -1012,7 +1024,7 @@ export default function HomeClient({
                     Dishes Ready to Order
                   </h2>
                   <p className="text-xs text-base-content/60">
-                    Freshly prepared and packaged for doorstep dispatch
+                    Freshly prepared and packaged for eat-in, pickup or dispatch
                   </p>
                 </div>
               </div>
@@ -1028,83 +1040,83 @@ export default function HomeClient({
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {initialItems.slice(0, homeDishesCount).map((item) => (
-                    <div
-                      key={item.id}
-                      className="card bg-base-100 shadow-sm border border-base-200 rounded-2xl overflow-hidden hover:shadow-md transition-all flex flex-col justify-between"
-                    >
-                      <div className="p-4 flex gap-3">
-                        {item.image_url ? (
-                          <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative bg-base-200">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={item.image_url}
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-20 h-20 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold">
-                            <UtensilsCrossed className="w-7 h-7" />
-                          </div>
-                        )}
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span className="badge badge-xs badge-ghost text-[10px] font-medium bg-base-200">
-                              {item.categories?.name || "Dish"}
-                            </span>
-                            {item.vendors?.city_area && (
-                              <span className="text-[10px] text-base-content/50">
-                                • {item.vendors.city_area}
-                              </span>
-                            )}
-                          </div>
-
-                          <h3 className="font-bold text-xs sm:text-[13px] text-base-content truncate">
-                            {item.name}
-                          </h3>
-
-                          {item.description && (
-                            <p className="text-[11px] text-base-content/65 line-clamp-2 mt-0.5 leading-relaxed">
-                              {item.description}
-                            </p>
+                      <div
+                        key={item.id}
+                        className="card bg-base-100 shadow-sm border border-base-200 rounded-2xl overflow-hidden hover:shadow-md transition-all flex flex-col justify-between"
+                      >
+                        <div className="p-4 flex gap-3">
+                          {item.image_url ? (
+                            <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative bg-base-200">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={item.image_url}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-20 h-20 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold">
+                              <UtensilsCrossed className="w-7 h-7" />
+                            </div>
                           )}
 
-                          <div className="mt-2 text-sm font-black text-primary">
-                            ₦{Number(item.price).toLocaleString()}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="badge badge-xs badge-ghost text-[10px] font-medium bg-base-200">
+                                {item.categories?.name || "Dish"}
+                              </span>
+                              {item.vendors?.city_area && (
+                                <span className="text-[10px] text-base-content/50">
+                                  • {item.vendors.city_area}
+                                </span>
+                              )}
+                            </div>
+
+                            <h3 className="font-bold text-xs sm:text-[13px] text-base-content truncate">
+                              {item.name}
+                            </h3>
+
+                            {item.description && (
+                              <p className="text-[11px] text-base-content/65 line-clamp-2 mt-0.5 leading-relaxed">
+                                {item.description}
+                              </p>
+                            )}
+
+                            <div className="mt-2 text-sm font-black text-primary">
+                              ₦{Number(item.price).toLocaleString()}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="bg-base-200/40 px-4 py-2 border-t border-base-200 flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-base-content/70 truncate max-w-[150px]">
-                          By {item.vendors?.business_name || "Local Kitchen"}
-                        </span>
-                        <Link
-                          href={`/store/${item.vendors?.slug || ""}`}
-                          className="btn btn-secondary btn-xs rounded-xl text-white font-bold gap-1 shadow-xs"
-                        >
-                          <ShoppingBag className="w-3 h-3" />
-                          Order Now
-                        </Link>
+                        <div className="bg-base-200/40 px-4 py-2 border-t border-base-200 flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-base-content/70 truncate max-w-[150px]">
+                            By {item.vendors?.business_name || "Local Kitchen"}
+                          </span>
+                          <Link
+                            href={`/store/${item.vendors?.slug || ""}`}
+                            className="btn btn-secondary btn-xs rounded-xl text-white font-bold gap-1 shadow-xs"
+                          >
+                            <ShoppingBag className="w-3 h-3" />
+                            Order Now
+                          </Link>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-
-                {initialItems.length > homeDishesCount && (
-                  <div className="text-center pt-2">
-                    <button
-                      onClick={() => setHomeDishesCount((prev) => prev + 12)}
-                      className="btn btn-outline border-base-300 btn-sm rounded-xl font-bold text-xs gap-1.5 hover:bg-base-200"
-                    >
-                      <UtensilsCrossed className="w-3.5 h-3.5 text-primary" />
-                      Load More Dishes ({initialItems.length - homeDishesCount} remaining)
-                    </button>
+                    ))}
                   </div>
-                )}
-              </>
-            )}
+
+                  {initialItems.length > homeDishesCount && (
+                    <div className="text-center pt-2">
+                      <button
+                        onClick={() => setHomeDishesCount((prev) => prev + 12)}
+                        className="btn btn-outline border-base-300 btn-sm rounded-xl font-bold text-xs gap-1.5 hover:bg-base-200"
+                      >
+                        <UtensilsCrossed className="w-3.5 h-3.5 text-primary" />
+                        Load More Dishes ({initialItems.length - homeDishesCount} remaining)
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </section>
 
             {/* Vendor Registration CTA Banner */}
@@ -1114,7 +1126,7 @@ export default function HomeClient({
                   For Chefs & Food Vendors
                 </span>
                 <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-tight">
-                  Start Selling Your Food Online in Lagos & Beyond
+                  Start selling your food online
                 </h3>
                 <p className="text-xs text-white/80 mt-2 leading-relaxed">
                   No registration fees. Receive direct bank transfers from buyers when orders are accepted. Quick 2-minute setup.
